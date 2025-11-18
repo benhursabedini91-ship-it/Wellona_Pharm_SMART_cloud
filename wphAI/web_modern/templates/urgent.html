@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Urgjencë <span class="pill">{{ "ops.article_urgency" if used_view else "demo" }}</span></h2>
+<table class="tbl">
+  <thead><tr><th>SIFRA</th><th>NAZIV</th><th>COVER (ditë)</th></tr></thead>
+  <tbody>
+    {% for s,n,c in rows %}
+      <tr><td>{{ s }}</td><td>{{ n }}</td><td>{{ "%.1f"|format(c) }}</td></tr>
+    {% else %}
+      <tr><td colspan="3" class="muted">Nuk ka urgjenca.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

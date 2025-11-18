@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WPH AI Dashboard{% endblock %}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: #e0e0e0; }
+        nav { background: #2d2d2d; padding: 1rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        nav a { color: #4fc3f7; text-decoration: none; margin-right: 2rem; font-weight: 500; }
+        nav a:hover { color: #81d4fa; }
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
+        h1 { color: #fff; margin-bottom: 1.5rem; }
+        table { width: 100%; border-collapse: collapse; background: #2d2d2d; margin-top: 1rem; }
+        th { background: #3d3d3d; color: #4fc3f7; padding: 1rem; text-align: left; font-weight: 600; }
+        td { padding: 0.8rem 1rem; border-bottom: 1px solid #3d3d3d; }
+        tr:hover { background: #3a3a3a; }
+        .btn { display: inline-block; padding: 0.6rem 1.5rem; background: #4fc3f7; color: #1a1a1a; text-decoration: none; border-radius: 4px; font-weight: 600; border: none; cursor: pointer; }
+        .btn:hover { background: #81d4fa; }
+        .card { background: #2d2d2d; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .card h2 { color: #4fc3f7; margin-bottom: 1rem; }
+        .kpi { display: flex; gap: 2rem; margin-bottom: 2rem; }
+        .kpi-card { flex: 1; background: #3d3d3d; padding: 1.5rem; border-radius: 8px; text-align: center; }
+        .kpi-card .number { font-size: 2.5rem; font-weight: bold; color: #4fc3f7; }
+        .kpi-card .label { color: #b0b0b0; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Dashboard</a>
+        <a href="/urgent">Urgent</a>
+        <a href="/orders">Orders</a>
+        <a href="/health">Health</a>
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

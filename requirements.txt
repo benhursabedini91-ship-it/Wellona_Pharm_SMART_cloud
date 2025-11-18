@@ -1,0 +1,5 @@
+# Flask framework
+Flask
+
+# Add other dependencies here as we use them
+# e.g., Flask-SQLAlchemy

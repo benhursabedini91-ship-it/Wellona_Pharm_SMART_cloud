@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Admin</h2>
+<p class="muted">Health & config</p>
+<pre style="background:#0b1220;padding:12px;border-radius:10px;overflow:auto">{{ info | tojson(indent=2) }}</pre>
+{% endblock %}

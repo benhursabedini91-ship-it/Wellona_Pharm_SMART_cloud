@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Auto Order <span class="pill">{{ "ops.article_status" if used_view else "demo" }}</span></h2>
+<div style="margin:10px 0"><a class="btn" href="/orders/export">Eksporto CSV (demo)</a></div>
+<table class="tbl">
+  <thead><tr><th>SIFRA</th><th>NAZIV</th><th>MIN_ZALIHA</th></tr></thead>
+  <tbody>
+    {% for s,n,m in rows %}
+      <tr><td>{{ s }}</td><td>{{ n }}</td><td>{{ m }}</td></tr>
+    {% else %}
+      <tr><td colspan="3" class="muted">S’ka të dhëna.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

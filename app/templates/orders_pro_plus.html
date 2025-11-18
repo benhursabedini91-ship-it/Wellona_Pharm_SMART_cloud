@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Konsola - Orders Pro+ & Faktura{% endblock %}
+{% block content %}
+<div style="display:flex; flex-direction:column; gap:24px;">
+  <section style="background:#0f172a; padding:16px; border-radius:16px; border:1px solid #1f2937; color:#e5e7eb;">
+    <h2 style="margin:0 0 8px;">Faktura CSV Import</h2>
+    <p style="margin:0 0 12px; font-size:13px; color:#9ca3af;">Ngarko një skedar CSV dhe bëj dry-run ose simulim ERP.</p>
+    <form id="csvForm" enctype="multipart/form-data" onsubmit="return false;" style="display:flex; gap:8px; flex-wrap:wrap;">
+      <input type="file" name="file" id="csvFile" accept=".csv" required />
+      <select id="csvDryRun">
+        <option value="1" selected>Dry-run</option>
+        <option value="0">Commit (Simulim)</option>
+      </select>
+      <button type="button" onclick="uploadCsv()">Dërgo</button>
+      <button type="button" onclick="downloadCsvSample()">Shembull CSV</button>
+    </form>
+    <div id="csvResult" style="margin-top:10px; font-size:13px; color:#93c5fd;"></div>
+  </section>
+  <section style="background:#0f172a; padding:16px; border-radius:16px; border:1px solid #1f2937; color:#e5e7eb;">
+    <h2 style="margin:0 0 8px;">Faktura XML Import (Sopharma / UBL)</h2>
+    <p style="margin:0 0 12px; font-size:13px; color:#9ca3af;">Dry-run përpara commit në DB. Për commit kërkohet konfigurim i duhur i DB.</p>
+    <form id="xmlForm" enctype="multipart/form-data" onsubmit="return false;" style="display:flex; gap:8px; flex-wrap:wrap;">
+      <input type="file" name="file" id="xmlFile" accept=".xml" required />
+      <select id="xmlDryRun">
+        <option value="1" selected>Dry-run</option>
+        <option value="0">Commit</option>
+      </select>
+      <button type="button" onclick="uploadXml('dry')">Parse</button>
+      <button type="button" onclick="uploadXml('commit')">Commit</button>
+    </form>
+    <div id="xmlResult" style="margin-top:10px; font-size:13px; color:#93c5fd;"></div>
+  </section>
+</div>
+<script>
+function downloadCsvSample(){
+  const rows = `invoice_number,invoice_date,customer_code,customer_name,item_code,item_name,quantity,unit_price,tax_rate\n`+
+               `INV-1001,2025-11-17,CUST-01,Sample Customer,ITEM-01,Paracetamol 500mg,2,3.50,10\n`+
+               `INV-1001,2025-11-17,CUST-01,Sample Customer,ITEM-02,Vitamin C 1000mg,1,8.90,0\n`+
+               `INV-1002,17/11/2025,CUST-02,Another Customer,ITEM-01,Paracetamol 500mg,5,3.20,10\n`;
+  const blob = new Blob([rows], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'faktura_sample.csv'; a.click(); URL.revokeObjectURL(url);
+}
+async function uploadCsv(){
+  const file = document.getElementById('csvFile').files[0];
+  const dry = document.getElementById('csvDryRun').value;
+  if(!file){ document.getElementById('csvResult').textContent='Zgjidh CSV.'; return; }
+  const fd = new FormData(); fd.append('file', file);
+  document.getElementById('csvResult').textContent='Duke dërguar...';
+  try {
+    const r = await fetch(`/api/faktura/import?dry_run=${dry}`, {method:'POST', body:fd});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'Gabim');
+    const s=j.summary; document.getElementById('csvResult').textContent=`OK: Fatura=${s.invoices} Rreshta=${s.processed} Gabime=${s.errors} Dry-run=${s.dry_run}`;
+  } catch(e){ document.getElementById('csvResult').textContent='Gabim: '+e.message; }
+}
+async function uploadXml(mode){
+  const file = document.getElementById('xmlFile').files[0];
+  const drySel = document.getElementById('xmlDryRun').value;
+  if(!file){ document.getElementById('xmlResult').textContent='Zgjidh XML.'; return; }
+  const fd = new FormData(); fd.append('file', file);
+  const isDry = drySel==='1';
+  let url;
+  if(mode==='dry') url = '/api/faktura/xml/dry-run'; else url = `/api/faktura/xml/commit?dry_run=${isDry?'1':'0'}`;
+  document.getElementById('xmlResult').textContent='Duke përpunuar...';
+  try {
+    const r = await fetch(url,{method:'POST',body:fd});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'Gabim');
+    if(mode==='dry'){
+      const h=j.header; document.getElementById('xmlResult').textContent=`Dry-run OK: Nr=${h.broj_faktura} Items=${j.counts.items} Furnizues=${h.dobavljac}`;
+    } else {
+      document.getElementById('xmlResult').textContent=`Commit OK: kalk_id=${j.kalk_id||'—'} items=${j.items} faktura=${j.broj_faktura} dry_run=${j.dry_run}`;
+    }
+  } catch(e){ document.getElementById('xmlResult').textContent='Gabim: '+e.message; }
+}
+</script>
+{% endblock %}

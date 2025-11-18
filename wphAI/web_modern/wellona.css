@@ -1,0 +1,16 @@
+:root{
+  --w-green:#1FAE66; --w-yellow:#FFD93D; --w-red:#E63946; --w-blue:#004AAD;
+  --bg:#0B1220; --card:#121A2A; --ink:#E6EDF3; --muted:#9FB1C7; --ring:#1FAE66;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,Segoe UI,Roboto}
+.container{max-width:1100px;margin:32px auto;padding:0 20px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#0f1b32;border:1px solid #1d2a43;color:var(--muted)}
+h1{margin:0;font-size:28px;letter-spacing:.2px}
+.card{background:var(--card);border:1px solid #1d2a43;border-radius:14px;padding:16px;margin-top:16px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{background:#0f1b32;border:1px solid #1d2a43;border-radius:12px;padding:12px}
+.kpi .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.6px}
+.kpi .value{font-size:22px;margin-top:6px}
+.status.ok{color:var(--w-green)} .status.warn{color:var(--w-yellow)} .status.bad{color:var(--w-red)}
+ul.list{margin:0;padding-left:18px}

@@ -1,0 +1,9 @@
+:root{
+  --wellona-green:#1FAE66; --wellona-yellow:#FFD93D; --wellona-red:#E63946; --wellona-blue:#004AAD;
+}
+.bg-wellona{ background:var(--wellona-blue)!important; }
+.text-mono{ font-family: ui-monospace,Consolas,monospace; }
+.card.kpi .kpi-title{ font-size:.8rem; color:#6c757d; text-transform:uppercase; letter-spacing:.08em }
+.card.kpi .kpi-value{ font-size:2rem; font-weight:800; }
+.card.kpi .kpi-sub{ font-size:.8rem; color:#8a8a8a }
+.badge.bg-success-subtle{ background:#e8f7ef; color:#0f6b3e }

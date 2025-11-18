@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Finance</h2>
+<ul class="kpilist">
+  <li><b>Artikuj total:</b> {{ kpis.artikuj_total }}</li>
+  <li><b>DB:</b> {{ cfg.db }}</li>
+  <li><b>Host:</b> {{ cfg.host }}</li>
+  <li><b>User:</b> {{ cfg.user }}</li>
+</ul>
+<p class="muted">Kjo faqe do lidhet me faturat/pozi kur të aktivizojmë modulën financiare.</p>
+{% endblock %}

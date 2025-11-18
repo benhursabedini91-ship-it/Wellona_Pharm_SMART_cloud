@@ -1,0 +1,350 @@
+@app.get("/api/orders/recalc")
+def api_orders_recalc():
+    # Params
+    df = request.args.get('date_from')
+    dt = request.args.get('date_to')
+    try:
+        min_out = float(request.args.get('min_out', '-10'))
+    except ValueError:
+        min_out = -10.0
+    include_zero = request.args.get('include_zero', 'false').lower() in ('1','true','yes','y')
+    try:
+        target_days = float(request.args.get('target_days', '6'))
+    except ValueError:
+        target_days = 6.0
+    target_days = max(1.0, min(100.0, target_days))
+
+    # Date window
+    from datetime import date, timedelta
+    today = date.today()
+    if df and dt:
+        from_date = date.fromisoformat(df)
+        to_date = date.fromisoformat(dt)
+        if from_date > to_date:
+            return jsonify({"error":"date_from must be <= date_to"}), 400
+    elif not df and not dt:
+        to_date = today
+        from_date = today - timedelta(days=180)
+    else:
+        return jsonify({"error":"Both date_from and date_to are required when using custom range"}), 400
+
+    # Build range SQL
+    base_sql = """
+    WITH sales AS (
+        SELECT * FROM lyt.sales_in_range(%(from)s::date, %(to)s::date, %(min_out)s::numeric)
+    ), base AS (
+        SELECT 
+            COALESCE(s.sifra, i.sifra) AS sifra,
+            COALESCE(i.stanje, 0)::numeric AS current_stock,
+            COALESCE(s.avg_daily, 0)::numeric AS avg_daily,
+            COALESCE(s.monthly_units, 0)::int AS monthly_units
+        FROM {join_clause}
+    ), calc AS (
+        SELECT 
+            b.sifra,
+            b.current_stock,
+            b.avg_daily,
+            b.monthly_units,
+            (
+              SELECT p.min_zaliha 
+              FROM ref.min_zaliha_policy p
+              WHERE b.monthly_units >= p.range_from 
+                AND (p.range_to IS NULL OR b.monthly_units <= p.range_to)
+              ORDER BY p.range_from DESC 
+              LIMIT 1
+            ) AS min_zaliha,
+            %(target_days)s::numeric AS target_days
+        FROM base b
+    )
+    SELECT 
+        c.sifra,
+        ar.naziv,
+        c.current_stock,
+        c.avg_daily AS avg_daily_sales,
+        CASE WHEN c.avg_daily > 0 THEN ROUND((c.current_stock / c.avg_daily)::numeric, 1) ELSE 0 END AS days_cover,
+        COALESCE(c.min_zaliha,0) AS min_zaliha,
+        GREATEST(0, GREATEST(COALESCE(c.min_zaliha,0), CEIL(c.target_days * c.avg_daily)) - c.current_stock) AS qty_to_order
+    FROM calc c
+    JOIN eb_fdw.artikli ar ON ar.sifra = c.sifra
+    WHERE (GREATEST(0, GREATEST(COALESCE(c.min_zaliha,0), CEIL(c.target_days * c.avg_daily)) - c.current_stock)) > 0
+    ORDER BY 5 ASC NULLS FIRST
+    """
+
+    # Prefer stg.stock_snapshot për current_stock
+    # (fallback te eb_fdw.artikli vetëm nëse snapshot mungon)
+    try:
+        # sanity probe: does stg.stock_snapshot exist?
+        _ = fetch_all("SELECT 1 FROM stg.stock_snapshot LIMIT 1")
+        if include_zero:
+            join_clause = "sales s FULL OUTER JOIN stg.stock_snapshot i ON s.sifra = i.sifra"
+        else:
+            join_clause = "sales s JOIN stg.stock_snapshot i ON s.sifra = i.sifra"
+    except Exception:
+        if include_zero:
+            join_clause = "sales s FULL OUTER JOIN eb_fdw.artikli i ON s.sifra = i.sifra"
+        else:
+            join_clause = "sales s JOIN eb_fdw.artikli i ON s.sifra = i.sifra"
+
+    sql = base_sql.replace("{join_clause}", join_clause)
+
+    params = {
+        'from': from_date.isoformat(),
+        'to': to_date.isoformat(),
+        'min_out': min_out,
+        'target_days': target_days,
+    }
+    rows = fetch_all(sql, params)
+
+    total = sum(float(r['qty_to_order']) for r in rows)
+    urgent = sum(1 for r in rows if (float(r.get('days_cover') or 0) > 0 and float(r.get('days_cover') or 0) < 3))
+    critical = sum(1 for r in rows if float(r.get('current_stock') or 0) == 0 and float(r.get('avg_daily_sales') or 0) > 0)
+
+    return jsonify({
+        'range': {
+            'from': from_date.isoformat(),
+            'to': to_date.isoformat(),
+            'days': (to_date - from_date).days + 1,
+            'include_zero': include_zero,
+            'target_days': target_days
+        },
+        'stats': {
+            'count': len(rows),
+            'total_qty': round(total, 2),
+            'urgent': urgent,
+            'critical': critical
+        },
+        'items': rows
+    })
+import os
+from flask import Flask, jsonify, send_file, request, send_from_directory
+from dotenv import load_dotenv
+from datetime import datetime, timedelta
+from db import fetch_all
+
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+
+app = Flask(__name__)
+
+@app.get("/health")
+def health():
+    return jsonify({
+        "status": "OK",
+        "db_host": os.getenv("WPH_DB_HOST",""),
+        "db_name": os.getenv("WPH_DB_NAME",""),
+        "app_port": int(os.getenv("APP_PORT","8055"))
+    })
+
+@app.get("/")
+def home():
+    return jsonify({
+        "routes": [
+            "/health",
+            "/api/orders",
+            "/api/orders/recalc",
+            "/api/orders/phoenix",
+            "/ui"
+        ]
+    })
+
+@app.get("/api/orders/recalc")
+def api_orders_recalc():
+    """
+    Date-range based order calculation per official spec.
+    Query params:
+      - date_from (YYYY-MM-DD, optional)
+      - date_to (YYYY-MM-DD, optional)
+      - min_out (numeric, default -10)
+      - include_zero (bool, default false)
+      - target_days (numeric, default 6)
+    If date_from/to missing: use 180d default (today - 180 .. today).
+    If only one date: 400 error.
+    """
+    date_from_str = request.args.get("date_from")
+    date_to_str = request.args.get("date_to")
+    
+    if (date_from_str and not date_to_str) or (date_to_str and not date_from_str):
+        return jsonify({"error": "Both date_from and date_to required for custom range"}), 400
+    
+    if not date_from_str:
+        today = datetime.now().date()
+        date_to = today
+        date_from = today - timedelta(days=180)
+    else:
+        try:
+            date_from = datetime.strptime(date_from_str, "%Y-%m-%d").date()
+            date_to = datetime.strptime(date_to_str, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
+    
+    try:
+        min_out = float(request.args.get("min_out", -10))
+        target_days = float(request.args.get("target_days", 6))
+        include_zero = request.args.get("include_zero", "false").lower() == "true"
+    except ValueError:
+        return jsonify({"error": "Invalid numeric parameters"}), 400
+    
+    target_days = max(1.0, min(100.0, target_days))
+    
+    # Query sales in range
+    sales_rows = fetch_all(
+        "SELECT sifra, qty_range, avg_daily, monthly_units FROM lyt.sales_in_range(%s, %s, %s)",
+        [date_from, date_to, min_out]
+    )
+    sales_map = {r["sifra"]: r for r in sales_rows}
+    
+    # Query stock
+    try:
+        stock_rows = fetch_all("SELECT sifra, COALESCE(stanje,0) as current_stock FROM stg.stock_snapshot")
+    except Exception:
+        stock_rows = fetch_all("SELECT sifra, COALESCE(stanje,0) as current_stock FROM eb_fdw.artikli")
+    
+    candidates = []
+    for stock_row in stock_rows:
+        sifra = stock_row["sifra"]
+        current_stock = float(stock_row["current_stock"] or 0)
+        
+        if sifra in sales_map:
+            s = sales_map[sifra]
+            avg_daily = float(s["avg_daily"])
+            monthly_units = int(s["monthly_units"])
+        else:
+            if not include_zero:
+                continue
+            avg_daily = 0
+            monthly_units = 0
+        
+        # Lookup min_zaliha from policy
+        policy_rows = fetch_all(
+            """SELECT min_zaliha FROM ref.min_zaliha_policy_v2 
+               WHERE %s >= range_from AND (range_to IS NULL OR %s <= range_to)
+               ORDER BY range_from DESC LIMIT 1""",
+            [monthly_units, monthly_units]
+        )
+        min_zaliha = int(policy_rows[0]["min_zaliha"]) if policy_rows else 0
+        
+        # Calculate need
+        dyn_need = max(0, (target_days * avg_daily) - current_stock)
+        target_qty = max(min_zaliha, dyn_need)
+        qty_to_order = max(0, target_qty - current_stock)
+        
+        if qty_to_order <= 0:
+            continue
+        
+        days_cover = (current_stock / avg_daily) if avg_daily > 0 else 0
+        urgent = days_cover < 3
+        
+        candidates.append({
+            "sifra": sifra,
+            "current_stock": round(current_stock, 2),
+            "avg_daily": round(avg_daily, 2),
+            "monthly_units": monthly_units,
+            "min_zaliha": min_zaliha,
+            "qty_to_order": round(qty_to_order, 2),
+            "cover_days": round(days_cover, 1),
+            "urgent": urgent
+        })
+    
+    candidates.sort(key=lambda x: x["cover_days"])
+    
+    return jsonify({
+        "range": {
+            "from": str(date_from),
+            "to": str(date_to),
+            "days": (date_to - date_from).days + 1
+        },
+        "params": {
+            "min_out": min_out,
+            "target_days": target_days,
+            "include_zero": include_zero
+        },
+        "stats": {
+            "total_candidates": len(candidates),
+            "total_qty": round(sum(c["qty_to_order"] for c in candidates), 2),
+            "urgent_count": sum(1 for c in candidates if c["urgent"])
+        },
+        "candidates": candidates
+    })
+
+@app.get("/api/orders")
+def api_orders():
+    # Existing endpoint - no changes
+    try:
+        target_days = float(request.args.get("target_days", 6))
+    except ValueError:
+        target_days = 6.0
+    target_days = max(1.0, min(100.0, target_days))
+
+    rows = fetch_all(
+        """
+        WITH data AS (
+            SELECT 
+                a.sifra,
+                ar.naziv,
+                a.current_stock,
+                a.avg_daily_sales,
+                ROUND((a.current_stock / NULLIF(a.avg_daily_sales, 0))::numeric, 1) as days_cover,
+                a.min_zaliha,
+                a.has_recent_sales,
+                CASE 
+                    WHEN NOT a.has_recent_sales THEN 
+                        CASE WHEN a.current_stock = 0 AND a.avg_daily_sales > 0 THEN 2 ELSE 0 END
+                    ELSE GREATEST(0, GREATEST(a.min_zaliha, CEIL(%s * a.avg_daily_sales)) - a.current_stock)
+                END AS qty_to_order
+            FROM ops.article_status a
+            JOIN eb_fdw.artikli ar ON a.sifra = ar.sifra
+        )
+        SELECT sifra, naziv, current_stock, avg_daily_sales, days_cover, min_zaliha, qty_to_order
+        FROM data
+        WHERE qty_to_order > 0
+        ORDER BY days_cover ASC NULLS FIRST
+        """,
+        [target_days]
+    )
+    return jsonify(rows)
+
+@app.get("/api/orders/phoenix")
+def api_phoenix():
+    try:
+        target_days = float(request.args.get("target_days", 6))
+    except ValueError:
+        target_days = 6.0
+    target_days = max(1.0, min(100.0, target_days))
+
+    rows = fetch_all(
+        """
+        WITH data AS (
+            SELECT 
+                ar.barkod,
+                CASE 
+                    WHEN NOT a.has_recent_sales THEN 
+                        CASE WHEN a.current_stock = 0 AND a.avg_daily_sales > 0 THEN 2 ELSE 0 END
+                    ELSE GREATEST(0, GREATEST(a.min_zaliha, CEIL(%s * a.avg_daily_sales)) - a.current_stock)
+                END AS qty_to_order
+            FROM ops.article_status a
+            JOIN eb_fdw.artikli ar ON a.sifra = ar.sifra
+            WHERE ar.barkod IS NOT NULL AND ar.barkod <> ''
+        )
+        SELECT barkod, qty_to_order FROM data
+        WHERE qty_to_order > 0
+        ORDER BY qty_to_order DESC
+        """,
+        [target_days]
+    )
+    
+    csv_lines = ["barkod,qty_to_order"]
+    for r in rows:
+        csv_lines.append(f"{r['barkod']},{int(r['qty_to_order'])}")
+    
+    return "\n".join(csv_lines), 200, {"Content-Type": "text/csv; charset=utf-8"}
+
+@app.get("/ui")
+def ui():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), "public"), "orders_ai.html")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.getenv("APP_PORT","8055")), debug=True)
+
+
+
+
+

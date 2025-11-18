@@ -1,0 +1,10 @@
+﻿{
+    "invoice_no":  "1105798622",
+    "supplier":  "",
+    "src_xml":  "C:\\Wellona\\wphAI\\in\\sopharma\\SopharmaT_21-10-2025_1105798622.xml",
+    "dest_xml":  "C:\\Wellona\\wphAI\\queue\\erp_import\\20251117\\1105798622.xml",
+    "items":  "6",
+    "match_rate":  "0.00",
+    "total_calc":  "0.00",
+    "total_hdr":  ""
+}

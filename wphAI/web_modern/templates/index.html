@@ -1,0 +1,41 @@
+{% extends 'base.html' %}{% set active='home' %}
+{% block content %}
+  <div class="grid cards">
+    <div class="card kpi ok">
+      <h3>DB Connection</h3>
+      <div class="big">OK</div>
+      <div class="muted">{{ cfg.host }} • {{ cfg.db }} • {{ cfg.user }}</div>
+    </div>
+    <div class="card kpi ok">
+      <h3>Artikuj total</h3>
+      <div class="big">{{ info.total|default('—') }}</div>
+      <div class="muted">public.artikli</div>
+    </div>
+    <div class="card kpi warn">
+      <h3>Urgjencë (&lt;3 ditë)</h3>
+      <div class="big">{{ info.urgent|default(0) }}</div>
+      <div class="muted">flags nga ops.article_urgency (kur ta aktivizojmë)</div>
+    </div>
+    <div class="card kpi err">
+      <h3>Spillover Phoenix</h3>
+      <div class="big">{{ info.spillover|default(0) }}%</div>
+      <div class="muted">Rule 3.5M/4.0M/4.7M (placeholder)</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Top 10 artikuj</h2>
+    <table class="table">
+      <thead><tr><th>Sifra</th><th>Naziv</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for a in top10 %}
+        <tr>
+          <td>{{ a.sifra }}</td>
+          <td>{{ a.naziv }}</td>
+          <td><span class="badge ok">Aktiv</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - WPH AI{% endblock %}
+{% block content %}
+<h1>Dashboard Overview</h1>
+<div class="kpi">
+    <div class="kpi-card">
+        <div class="number">{{ urgent_count }}</div>
+        <div class="label">Urgent Articles</div>
+    </div>
+    <div class="kpi-card">
+        <div class="number">{{ stock_ok }}</div>
+        <div class="label">Stock OK</div>
+    </div>
+    <div class="kpi-card">
+        <div class="number">{{ total_pending }}</div>
+        <div class="label">Pending Orders</div>
+    </div>
+</div>
+<div class="card">
+    <h2>Quick Actions</h2>
+    <a href="/urgent" class="btn">View Urgent Items</a>
+    <a href="/orders" class="btn" style="margin-left: 1rem;">Manage Orders</a>
+    <a href="/health" class="btn" style="margin-left: 1rem;">Health Check</a>
+</div>
+{% endblock %}

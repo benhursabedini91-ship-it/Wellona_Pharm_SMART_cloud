@@ -1,0 +1,21 @@
+﻿{
+  "inboxes": [
+    "C:\\Wellona\\wphAI\\in\\phoenix",
+    "C:\\Wellona\\wphAI\\in\\vega",
+    "C:\\Wellona\\wphAI\\in\\sopharma",
+    "C:\\Wellona\\wphAI\\in\\farmalogist"
+  ],
+  "outdir": "C:\\Wellona\\wphAI\\out\\faktura",
+  "logdir": "C:\\Wellona\\wphAI\\logs",
+  "db": {
+    "host": "127.0.0.1",
+    "port": 5432,
+    "dbname": "wph_ai",
+    "user": "postgres",
+    "password_env": "WPH_PG18_PASS"
+  },
+  "mode": "SAFE_DRAFT",
+  "tolerance": {
+    "total_pct": 0.1
+  }
+}

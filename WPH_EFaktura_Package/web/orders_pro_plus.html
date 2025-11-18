@@ -1,0 +1,1653 @@
+
+<!doctype html>
+<html lang="sq">
+<head>
+  <meta charset="utf-8" />
+  <title>Wellona Pharm • SMART — Orders Pro+ (Dark & Collapsible)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f172a; --fg:#e5e7eb; --muted:#9ca3af;
+      --primary:#4f46e5; --primary2:#4338ca; --hover:#111827; --border:#1f2937;
+      --chip:#0b1220; --danger:#f87171; --ok:#10b981;
+      --sb-bg:#0d1426; --sb-fg:#e5e7eb; --sb-border:#1e293b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui, Arial; background:var(--bg); color:var(--fg);}
+    .layout{display:grid; grid-template-columns: 260px 1fr; min-height:100vh; transition: grid-template-columns .2s ease;}
+    /* Collapsed state */
+    .collapsed{ grid-template-columns: 72px 1fr !important; }
+    /* Sidebar */
+    .sb{background:var(--sb-bg); color:var(--sb-fg); padding:12px 10px; border-right: 1px solid var(--sb-border); display:flex; flex-direction:column; gap:10px;}
+    .brand{line-height:1.05; padding:6px 6px 4px 6px; display:flex; flex-direction:column; align-items:center;}
+    .brand img{transition: all 0.4s ease;}
+    .brand:hover img{transform:rotate(360deg) scale(1.1); filter:drop-shadow(0 4px 16px rgba(93,179,212,0.6));}
+    .brand .t1{font-weight:800; font-size:18px; margin-top:8px;}
+    .brand .t2{font-weight:800; font-size:22px; color:#93c5fd; letter-spacing:0.3px;}
+    .brand .t3{font-size:11px; color:#94a3b8}
+    .toggle{margin:4px 6px 0; display:flex; align-items:center; gap:8px;}
+    .btn-icon{width:36px; height:36px; border-radius:10px; border:1px solid var(--sb-border); background:transparent; color:var(--sb-fg); cursor:pointer;}
+    .btn-icon:hover{background:#111827}
+    .nav{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+    .nav .item{
+      display:flex; align-items:center; gap:10px; padding:10px 10px; border-radius:12px;
+      cursor:pointer; color:var(--sb-fg); font-weight:600; border:1px solid transparent;
+    }
+    .nav .item .ic{width:22px; text-align:center; font-size:18px}
+    .nav .item:hover{background:#0f172a; border-color:#1f2937}
+    .nav .item.active{background:#4f46e5; color:#fff; border-color:#4338ca}
+    .nav .label{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    /* Collapse effects */
+    .collapsed .brand .t1, .collapsed .brand .t2, .collapsed .brand .t3{ display:none; }
+    .collapsed .nav .label{ display:none; }
+    .collapsed .toggle .txt{ display:none; }
+    .collapsed .sb{ padding-left:8px; padding-right:8px; }
+    /* Main */
+    .main{display:flex; flex-direction:column; min-width:0;}
+    .top{display:flex; align-items:center; justify-content:center; position:relative;
+         background:linear-gradient(90deg,#5b21b6,#1e3a8a); padding:16px 20px; border-bottom:1px solid var(--border)}
+    .top .ttl{position:absolute; left:20px; font-weight:800; font-size:15px;}
+    .top .right{position:absolute; right:20px; display:flex; align-items:center; gap:8px}
+    .chip{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25); padding:6px 10px; border-radius:999px; font-size:12px}
+    .content{position:relative; flex:1; background:var(--panel); overflow:auto;}
+    .view{display:none; min-height:100%;}
+    .view.active{display:block;}
+    /* Orders Pro+ */
+    .bar { display:flex; gap:8px; flex-wrap:wrap; padding:12px 16px; background:var(--panel); position:sticky; top:0; z-index:10; border-bottom:1px solid var(--border); }
+    input, select, button { padding:9px 12px; border-radius:10px; border:1px solid var(--border); background:var(--chip); color:var(--fg); }
+    select[multiple] { min-width: 180px; min-height: 42px; }
+    button.primary { background:var(--primary); border-color:var(--primary2); cursor:pointer; font-weight:600; transition:all 0.2s ease; }
+    button.primary:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(79,70,229,0.4); }
+    button.primary.pulse { animation:pulse 2s ease-in-out infinite; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(79,70,229,0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(79,70,229,0); }
+    }
+    button.ghost { background:var(--chip); border-color:var(--border); cursor:pointer;}
+    button.warn { background:#7c2d12; border-color:#9a3412; }
+    .row { display:flex; gap:8px; align-items:center; }
+    .chips { display:flex; gap:6px; flex-wrap:wrap; margin:6px 16px 0;}
+    .chip2 { background:var(--chip); border:1px solid var(--border); padding:4px 8px; border-radius:999px; color:var(--muted); font-size:12px; display:flex; gap:6px; align-items:center;}
+    .chip2 b{ color:var(--fg); font-weight:600;}
+    .chip2 .x { cursor:pointer; opacity:0.8;}
+    .wrap { padding:12px 16px 76px; }
+    table { width:100%; border-collapse:separate; border-spacing:0; }
+    th, td { padding:8px 10px; border-bottom:1px solid var(--border); font-size:14px; text-align:left; }
+    th { position: sticky; top: 68px; z-index: 5; background: var(--bg); font-weight:600; cursor:pointer; user-select:none; }
+    th:hover { background: var(--hover); }
+    th .sort-indicator { margin-left:4px; font-size:10px; opacity:0.5; }
+    th.sorted { color:#93c5fd; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    /* Negative stock highlight */
+    tr.neg td { background: rgba(239,68,68,0.12) !important; border-left:3px solid #ef4444; }
+    tr.neg td:first-child { font-weight:700; color:#fca5a5; }
+    /* Supplier badges */
+    .badge-supplier { padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; text-transform:uppercase; }
+    .badge-PHOENIX { background:#fef3c7; color:#78350f; border:1px solid #fde047; }
+    .badge-SOPHARMA { background:#dbeafe; color:#1e3a8a; border:1px solid#93c5fd; }
+    .badge-VEGA { background:#d1fae5; color:#064e3b; border:1px solid #6ee7b7; }
+    .badge-FARMALOGIST { background:#fce7f3; color:#831843; border:1px solid #f9a8d4; }
+    .err { color:var(--danger); padding:10px 16px; }
+    .kpi { display:flex; gap:12px; margin-left:auto;}
+    .kpi div { background:var(--chip); padding:8px 10px; border:1px solid var(--border); border-radius:12px; min-width:110px; text-align:center;}
+    .totals { position:sticky; bottom:0; z-index:9; background: linear-gradient(180deg, rgba(15,23,42,0.75), var(--bg)); border-top:1px solid var(--border); padding:10px 16px; display:flex; gap:10px; align-items:center; justify-content:space-between;}
+    .totals .left{display:flex; gap:10px; align-items:center;}
+    .pill { background:var(--chip); border:1px solid var(--border); padding:6px 10px; border-radius:999px;}
+    .hint { font-size:12px; color:var(--muted); }
+    .modal { position: fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,0.4); }
+    .modal .card { width: min(720px, 92vw); background: var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px; }
+    .modal h3 { margin: 0 0 10px 0; }
+    .grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; }
+    .cols { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; }
+    .right { text-align:right; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .hr { height:1px; background:var(--border); margin:10px 0; }
+    .p-wrap{padding:20px}
+    .card{background:#0b1220;border:1px solid #1f2937;border-radius:16px;padding:16px}
+    /* Toast notifications */
+    .toast-container{position:fixed; top:16px; right:16px; z-index:9999; display:flex; flex-direction:column; gap:8px;}
+    .toast{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px 16px; min-width:300px; max-width:400px; box-shadow:0 4px 12px rgba(0,0,0,0.3); animation:slideIn 0.3s ease;}
+    .toast.success{border-left:4px solid var(--ok);}
+    .toast.error{border-left:4px solid var(--danger);}
+    .toast.warning{border-left:4px solid #f59e0b;}
+    @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+    /* Skeleton loader */
+    .skeleton{background:linear-gradient(90deg, var(--chip) 25%, var(--hover) 50%, var(--chip) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite;}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .skeleton-row{height:40px; margin:8px 0; border-radius:8px;}
+    /* Editable cells */
+    input.cell-edit{width:70px; padding:4px 6px; font-size:13px; background:var(--hover); border:1px solid var(--primary); color:var(--fg);}
+    tr.edited td{background:rgba(79,70,229,0.1);}
+  </style>
+</head>
+<body>
+  <!-- Toast container -->
+  <div id="toastContainer" class="toast-container"></div>
+  
+  <div id="layout" class="layout">
+    <aside class="sb">
+      <div class="brand">
+        <!-- Wellona Logo -->
+        <img src="/static/img/wellona-logo.svg" width="52" height="52" alt="Wellona Pharm" style="margin-bottom:10px; filter:drop-shadow(0 2px 8px rgba(0,0,0,0.2));" />
+        <div class="t1">Wellona Pharm</div>
+        <div class="t2">SMART</div>
+        <div class="t3">Konsola unifikuar</div>
+      </div>
+      <div class="toggle">
+        <button id="btnCollapse" class="btn-icon" title="Collapse / Expand">☰</button>
+        <span class="txt" style="font-size:12px; color:#94a3b8">Collapse</span>
+      </div>
+      <div class="nav" id="nav">
+        <div class="item active" data-view="porosi" title="Porosi AI"><div class="ic">🧠</div><div class="label">Porosi AI</div></div>
+        <div class="item" data-view="faktura" title="Faktura AI"><div class="ic">📄</div><div class="label">Faktura AI</div></div>
+        <!-- eFaktura removed from sidebar. Keep code for reference in case we re-enable later. -->
+        <!-- <div class="item" data-view="serbia" title="Serbia eFaktura"><div class="ic">🌍</div><div class="label">eFaktura</div></div> -->
+        <div class="item" data-view="banka" title="Banka AI"><div class="ic">🏛️</div><div class="label">Banka AI</div></div>
+        <div class="item" data-view="analyst" title="Analyst"><div class="ic">📊</div><div class="label">Analyst</div></div>
+        <div class="item" data-view="loyalty" title="Loyalty"><div class="ic">🎟️</div><div class="label">Loyalty</div></div>
+        <div class="item" data-view="admin" title="Admin"><div class="ic">⚙️</div><div class="label">Admin</div></div>
+      </div>
+    </aside>
+
+    <section class="main">
+      <div class="top">
+        <div class="ttl" id="ttl">Porosi AI</div>
+        <!-- Centered Logo -->
+        <img src="/static/img/wellona-full-logo.svg" height="42" alt="Wellona Pharm" style="filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4));" />
+        <div class="right">
+          <div class="chip" id="env">Local</div>
+          <div class="chip"><a href="/api/health/db" target="_blank" style="color:#fff; text-decoration:none">Health DB</a></div>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- POROSI (Orders Pro+) -->
+        <div class="view active" id="view-porosi">
+          <header style="padding:10px 16px; display:flex; justify-content:flex-end; gap:8px;">
+            <button class="ghost" id="btnColumns">Columns</button>
+            <button class="ghost" id="btnViews">Views</button>
+            <button class="primary" id="btnSaveView">Save View</button>
+          </header>
+          <div class="bar">
+            <!-- Compact layout with 2 rows -->
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; width:100%;">
+              <!-- Search (more compact) -->
+              <input id="q" placeholder="🔍 Kërko..." style="width:280px; font-size:14px; padding:10px 14px;" />
+              
+              <!-- Date Range -->
+              <input id="date_from" type="date" style="width:140px; font-size:13px; padding:9px 10px;" title="Nga data" />
+              <span style="color:var(--muted); font-size:12px;">→</span>
+              <input id="date_to" type="date" style="width:140px; font-size:13px; padding:9px 10px;" title="Deri data" />
+              
+              <!-- Target Days -->
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:12px; color:var(--muted);">Target:</span>
+                <input id="target_days" type="number" value="28" min="1" max="180" style="width:70px; padding:9px 10px; font-size:13px;" />
+                <span style="font-size:12px; color:var(--muted);">ditë</span>
+              </div>
+              
+              <!-- Supplier Multi-Select -->
+              <select id="supplier" multiple style="min-width:160px; max-width:200px; height:38px; font-size:13px; padding:6px 10px;">
+                <!-- Populated dynamically -->
+              </select>
+              
+              <!-- Min QTY -->
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:12px; color:var(--muted);">Min QTY:</span>
+                <input id="min_qty" type="number" value="1" min="0" step="1" style="width:60px; padding:9px 8px; font-size:13px;" />
+              </div>
+              
+              <!-- Compact Checkboxes -->
+              <div style="display:flex; gap:12px; align-items:center; margin-left:auto;">
+                <!-- Product Scope (replaces legacy include_zero meaning) -->
+                <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;">
+                  <select id="product_scope" style="padding:6px 8px; font-size:12px; background:var(--chip); border:1px solid var(--border); color:var(--fg);">
+                    <option value="sales" selected>Me shitje</option>
+                    <option value="all">Të gjitha</option>
+                  </select>
+                  <span style="color:var(--muted);">Produktet</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="include_zero" style="width:14px; height:14px;" />
+                  <span>Stok=0</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="only_to_order" checked style="width:14px; height:14px;" />
+                  <span>QTY>0</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="only_negative" style="width:14px; height:14px;" />
+                  <span>Minus</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="ignore_minz" style="width:14px; height:14px;" />
+                  <span title="Injoro MINZ">Ignore MINZ</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="smart_rounding" checked style="width:14px; height:14px;" />
+                  <span title="Smart rounding rules">Smart ⚡</span>
+                </label>
+              </div>
+              
+              <!-- Action Buttons -->
+              <button class="primary" id="btnFetch" style="padding:10px 20px; font-weight:600; font-size:14px;">🔄 Refresh</button>
+              <button class="ghost" id="btnCsv" style="padding:10px 16px; font-size:13px;">📥 CSV</button>
+              <button class="ghost" id="btnXlsx" style="padding:10px 16px; font-size:13px;">📊 XLSX</button>
+              <button class="primary" id="btnApprove" style="background:#10b981; border-color:#059669; padding:10px 20px; font-size:14px;">✅ Approve</button>
+            </div>
+            
+            <div class="kpi" style="margin-top:8px;">
+              <div><div>Items</div><b id="kpi_items">0</b></div>
+              <div><div>Total qty</div><b id="kpi_qty">0</b></div>
+            </div>
+          </div>
+          <div class="chips" id="chips"></div>
+          <div id="err" class="err" style="display:none;"></div>
+          <div class="wrap">
+            <table id="tbl">
+              <thead><tr id="thead"></tr></thead>
+              <tbody id="tbody"></tbody>
+              <tfoot>
+                <tr id="tfoot" style="background:var(--hover); font-weight:600; position:sticky; bottom:0; border-top:2px solid var(--primary);">
+                  <td colspan="999" style="padding:12px 10px;">
+                    <div style="display:flex; gap:20px; align-items:center;">
+                      <span style="color:#93c5fd;">TOTALI:</span>
+                      <span>Rreshta: <b id="t_rows">0</b></span>
+                      <span>QTY: <b id="t_qty" style="color:#10b981;">0</b></span>
+                      <span>Stock: <b id="t_stock">0</b></span>
+                      <span>Vlerë: <b id="t_value" style="color:#fbbf24;">—</b></span>
+                    </div>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="totals">
+            <div class="left">
+              <span class="pill">Rows: <b id="t_rows">0</b></span>
+              <span class="pill">Σ Qty: <b id="t_qty">0</b></span>
+              <span class="pill">Σ Stock: <b id="t_stock">0</b></span>
+            </div>
+            <div class="right hint">Hotkeys: <b>/</b> search, <b>f</b> fetch, <b>e</b> export, <b>c</b> columns, <b>v</b> views</div>
+          </div>
+          <!-- Columns modal -->
+          <div class="modal" id="modalCols">
+            <div class="card">
+              <h3>Zgjidh kolonat</h3>
+              <div class="cols" id="colsList"></div>
+              <div class="hr"></div>
+              <div class="right">
+                <button class="ghost" id="colsReset">Default</button>
+                <button class="primary" id="colsApply">Apply</button>
+              </div>
+            </div>
+          </div>
+          <!-- Views modal -->
+          <div class="modal" id="modalViews">
+            <div class="card">
+              <h3>Saved Views</h3>
+              <div id="viewsList" class="grid"></div>
+              <div class="hr"></div>
+              <div class="muted">Kliko një view për ta ngarkuar. <span class="link" id="viewsClear" style="text-decoration:underline; cursor:pointer">Clear all</span></div>
+            </div>
+          </div>
+          <!-- Save View modal -->
+          <div class="modal" id="modalSave">
+            <div class="card">
+              <h3>Ruaj View</h3>
+              <div class="grid">
+                <label>Emri i view
+                  <input id="viewName" placeholder="p.sh. Phoenix 30/28" />
+                </label>
+                <label>Opsione
+                  <select id="viewScope">
+                    <option value="withCols" selected>Përfshi kolonat</option>
+                    <option value="filtersOnly">Vetëm filtrat</option>
+                  </select>
+                </label>
+              </div>
+              <div class="hr"></div>
+              <div class="right">
+                <button class="ghost" id="saveCancel">Cancel</button>
+                <button class="primary" id="saveDo">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Approve Order Modal -->
+        <div class="modal" id="modalApprove" style="display:none;">
+          <div class="modal-pane" style="max-width:500px;">
+            <div class="hdr"><h3>Approve Order</h3><span class="close" id="approveClose">×</span></div>
+            <div class="body">
+              <p style="margin-bottom:1rem;color:var(--text-secondary);">
+                Kjo do të dërgojë porosinë me të gjitha ndryshimet te serveri për procesim final dhe gjenerim të CSV-ve.
+              </p>
+              <label style="display:block;margin-bottom:1rem;">
+                <span style="display:block;margin-bottom:0.5rem;font-weight:500;">Miratuar nga:</span>
+                <input type="text" id="approvedBy" placeholder="Emri juaj" style="width:100%;padding:0.5rem;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--text);" />
+              </label>
+              <label style="display:block;margin-bottom:1rem;">
+                <span style="display:block;margin-bottom:0.5rem;font-weight:500;">Supplier (opsional):</span>
+                <select id="approveSupplier" style="width:100%;padding:0.5rem;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--text);">
+                  <option value="">Të gjithë (ALL)</option>
+                  <!-- Populated dynamically from state.suppliers -->
+                </select>
+              </label>
+              <div style="padding:1rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+                  <span>Artikuj:</span><b id="approveItems">0</b>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                  <span>Total QTY:</span><b id="approveQty">0</b>
+                </div>
+              </div>
+            </div>
+            <div class="hr"></div>
+            <div class="right">
+              <button class="ghost" id="approveCancel">Cancel</button>
+              <button class="primary" id="approveDo">Submit Order</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Faktura AI Module -->
+        <div class="view" id="view-faktura">
+          <div class="bar">
+            <button class="primary" onclick="fakturaUpload()">📤 Upload Fakturë (XML)</button>
+            <button class="ghost" onclick="loadPendingFaktura()">🔄 Refresh Pending</button>
+            <button class="ghost" onclick="fetchFromEFaktura()" title="Pull from eFaktura API">⬇️ Fetch eFaktura</button>
+            <div class="kpi" style="margin-left:auto;">
+              <div><b id="pendingCount">0</b><br/><span style="font-size:11px;color:#9ca3af">Pending</span></div>
+            </div>
+          </div>
+          <div class="wrap">
+            <div id="fakturaUploadZone" style="display:none; border:2px dashed #4f46e5; padding:40px; text-align:center; border-radius:12px; margin-bottom:20px; background:rgba(79,70,229,0.05);">
+              <input type="file" id="fakturaFile" accept=".xml" style="display:none" onchange="handleFakturaUpload(event)" />
+              <h3 style="margin-top:0;">📄 Upload Invoice XML</h3>
+              <p style="color:#9ca3af;">Drag & drop or click to select XML file</p>
+              <button class="primary" onclick="document.getElementById('fakturaFile').click()">Choose File</button>
+              <button class="ghost" onclick="document.getElementById('fakturaUploadZone').style.display='none'" style="margin-left:8px;">Cancel</button>
+            </div>
+            
+            <!-- Pending Invoices Table -->
+            <div style="margin-bottom:24px;">
+              <h3 style="color:#e2e8f0; margin-bottom:12px;">📋 Pending Invoices (Not Imported to ERP)</h3>
+              <div id="pendingFakturaList" style="background:#1e293b; border-radius:12px; overflow:hidden;">
+                <table style="width:100%; border-collapse:collapse;">
+                  <thead style="background:#0f172a; color:#94a3b8; font-size:12px; text-transform:uppercase;">
+                    <tr>
+                      <th style="padding:12px; text-align:left;">Filename</th>
+                      <th style="padding:12px; text-align:left;">Supplier</th>
+                      <th style="padding:12px; text-align:left;">Invoice #</th>
+                      <th style="padding:12px; text-align:center;">Items</th>
+                      <th style="padding:12px; text-align:center;">Date</th>
+                      <th style="padding:12px; text-align:right;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pendingTableBody" style="color:#e2e8f0; font-size:13px;">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Preview Modal -->
+            <div id="previewModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; overflow:auto;">
+              <div style="max-width:1200px; margin:40px auto; background:#1e293b; border-radius:16px; padding:32px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+                  <h2 style="color:#e2e8f0; margin:0;">🔍 Invoice Preview</h2>
+                  <button class="ghost" onclick="closePreview()" style="font-size:20px;">✕</button>
+                </div>
+                <div id="previewContent"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Serbia eFaktura Module -->
+        <!-- Serbia eFaktura view removed from UI — leave server endpoints in place for future use. -->
+        <!-- <div class="view" id="view-serbia">
+          <div class="p-wrap">
+            <div class="card">
+              <h2>🌍 eFaktura</h2>
+              <div style="margin:20px 0;">
+                <button class="primary" onclick="loadSerbiaInvoices()">📄 Load Serbian Invoices</button>
+                <button class="ghost" onclick="fetchSerbiaEFaktura()" title="Fetch from Serbia eFaktura API">⬇️ Fetch eFaktura</button>
+                <button class="ghost" onclick="window.open('/ui/swagger', '_blank')" title="API Docs">📚 API Docs</button>
+              </div> -->
+              
+              <div id="serbiaInvoicesList" style="background:#1e293b; border-radius:12px; overflow:hidden;">
+                <table style="width:100%; border-collapse:collapse;">
+                  <thead style="background:#334155; color:#e2e8f0;">
+                    <tr>
+                      <th style="padding:12px; text-align:left;">Invoice ID</th>
+                      <th style="padding:12px; text-align:left;">Status</th>
+                      <th style="padding:12px; text-align:left;">CIR Status</th>
+                      <th style="padding:12px; text-align:left;">Comment</th>
+                      <th style="padding:12px; text-align:left;">Last Modified</th>
+                      <th style="padding:12px; text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="serbiaInvoicesTableBody">
+                    <tr><td colspan="6" style="padding:40px; text-align:center; color:#64748b;">Click "Load Serbian Invoices" to fetch data</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Serbia Preview Modal -->
+            <div id="serbiaPreviewModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; overflow:auto;">
+              <div style="max-width:1200px; margin:40px auto; background:#1e293b; border-radius:16px; padding:32px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+                  <h2 style="color:#e2e8f0; margin:0;">🔍 eFaktura Invoice Preview</h2>
+                  <button class="ghost" onclick="closeSerbiaPreview()" style="font-size:20px;">✕</button>
+                </div>
+                <div id="serbiaPreviewContent"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view" id="view-banka"><div class="p-wrap"><div class="card"><h2>Banka AI</h2><p>Modul placeholder.</p></div></div></div>
+        <div class="view" id="view-analyst"><div class="p-wrap"><div class="card"><h2>Analyst</h2><p>Modul placeholder.</p></div></div></div>
+        <div class="view" id="view-loyalty"><div class="p-wrap"><div class="card"><h2>Loyalty</h2><p>Modul placeholder.</p></div></div></div>
+        <div class="view" id="view-admin"><div class="p-wrap"><div class="card"><h2>Admin</h2><p>Modul placeholder.</p></div></div></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Sidebar collapse
+    const LAYOUT = document.getElementById("layout");
+    const KEY_COL = "smart.sidebar.collapsed";
+    function applyCollapsed(flag){
+      LAYOUT.classList.toggle("collapsed", !!flag);
+    }
+    applyCollapsed(localStorage.getItem(KEY_COL) === "1");
+    document.getElementById("btnCollapse").addEventListener("click", ()=>{
+      const cur = localStorage.getItem(KEY_COL) === "1";
+      localStorage.setItem(KEY_COL, cur ? "0" : "1");
+      applyCollapsed(!cur);
+    });
+
+    // Routing
+    const KEY_LAST = "smart.last.view";
+    const routes = ["porosi","faktura","serbia","banka","analyst","loyalty","admin"];
+    function setActive(view){
+      document.querySelectorAll("#nav .item").forEach(n=>n.classList.toggle("active", n.dataset.view===view));
+      document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+      (document.getElementById("view-"+view)||document.getElementById("view-porosi")).classList.add("active");
+      document.getElementById("ttl").textContent =
+        {porosi:"Porosi AI", faktura:"Faktura AI", serbia:"eFaktura", banka:"Banka AI", analyst:"Analyst", loyalty:"Loyalty", admin:"Admin"}[view] || "SMART";
+      localStorage.setItem(KEY_LAST, view);
+    }
+    document.getElementById("nav").addEventListener("click", (e)=>{
+      const item = e.target.closest(".item"); if (!item) return;
+      setActive(item.dataset.view);
+    });
+    window.addEventListener("keydown", (e)=>{
+      const map = { "1":"porosi", "2":"faktura", "3":"serbia", "4":"banka", "5":"analyst", "6":"loyalty", "7":"admin" };
+      if (map[e.key]) setActive(map[e.key]);
+    });
+    const last = localStorage.getItem(KEY_LAST);
+    setActive(routes.includes(last) ? last : "porosi");
+
+    // Orders Pro+ code (identik me variantin e mëparshëm)
+    const $ = (id)=>document.getElementById(id);
+    const KEY_COLS = "orders.columns.v1";
+    const KEY_VIEWS = "orders.views.v1";
+    const defaultColumns = [
+      {key:"sifra", label:"SIFRA", vis:true},
+      {key:"emri", label:"EMRI", vis:true},
+      {key:"barkod", label:"BARKOD", vis:true},
+      {key:"current_stock", label:"STOCK", vis:true},
+      {key:"avg_daily_sales", label:"AVG/D", vis:true},
+      {key:"avg_monthly", label:"AVG/30D", vis:true, computed:true},
+      {key:"avg_window", label:"AVG/WINDOW", vis:false, computed:true},
+      {key:"min_zaliha", label:"MINZ", vis:true},
+      {key:"days_cover", label:"DAYS", vis:true},
+      {key:"qty_to_order", label:"QTY", vis:true},
+      {key:"pack_size", label:"PACK", vis:false},
+      {key:"supplier_name", label:"SUPPLIER", vis:true},
+      {key:"base_price", label:"VPC", vis:true},
+      {key:"rabat_pct", label:"RABAT%", vis:true},
+      {key:"effective_price", label:"PRICE", vis:true},
+    ];
+      // Live filters
+      ["min_qty","only_negative","ignore_minz","only_to_order","smart_rounding"].forEach(id=>{
+        const el = $(id); if (el) el.addEventListener("input", ()=>{ renderRows(); renderTotals(); renderChips(); });
+      });
+  const state = { rows: [], columns: loadColumns(), edits: {}, windowDays: 30, sort: { key: "qty_to_order", dir: "desc" }, suppliers: [] };
+    
+    // Load suppliers from API
+    async function loadSuppliers() {
+      try {
+        const res = await fetch("/api/suppliers");
+        const suppliers = await res.json();
+        state.suppliers = suppliers;
+        const sel = $("supplier");
+        sel.innerHTML = suppliers.map(s => `<option value="${s.code}">${s.name}</option>`).join("");
+        
+        // Also populate approve modal dropdown
+        const approveSel = $("approveSupplier");
+        approveSel.innerHTML = '<option value="">Të gjithë (ALL)</option>' + 
+          suppliers.map(s => `<option value="${s.code}">${s.name}</option>`).join("");
+      } catch (e) {
+        console.error("Failed to load suppliers:", e);
+        // Fallback to hardcoded list
+        const sel = $("supplier");
+        sel.innerHTML = `
+          <option value="PHOENIX">PHOENIX</option>
+          <option value="VEGA">VEGA</option>
+          <option value="SOPHARMA">SOPHARMA</option>
+          <option value="FARMALOGIST">FARMALOGIST</option>
+        `;
+        const approveSel = $("approveSupplier");
+        approveSel.innerHTML = `
+          <option value="">Të gjithë (ALL)</option>
+          <option value="PHOENIX">PHOENIX</option>
+          <option value="VEGA">VEGA</option>
+          <option value="SOPHARMA">SOPHARMA</option>
+          <option value="FARMALOGIST">FARMALOGIST</option>
+        `;
+      }
+    }
+    
+    // Toast notification system
+    function showToast(message, type = 'success') {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+    
+    function loadColumns() {
+      try {
+        const raw = localStorage.getItem(KEY_COLS);
+        if (!raw) return JSON.parse(JSON.stringify(defaultColumns));
+        const saved = JSON.parse(raw);
+        const map = new Map(saved.map(c=>[c.key, c]));
+        return defaultColumns.map(d => map.has(d.key) ? {...d, vis: !!map.get(d.key).vis} : d);
+      } catch(_) { return JSON.parse(JSON.stringify(defaultColumns)); }
+    }
+    function saveColumns(cols) { localStorage.setItem(KEY_COLS, JSON.stringify(cols)); }
+    function getSelectedSuppliers() {
+      const s = $("supplier"); if (!s) return [];
+      const opts = Array.from(s.selectedOptions || []);
+      return opts.map(o => o.value.trim()).filter(Boolean);
+    }
+    function paramsBase() {
+      // Calculate sales_window from date range
+      const from = $("date_from").value;
+      const to = $("date_to").value;
+      let window_days = 30; // default
+      if (from && to) {
+        const d1 = new Date(from);
+        const d2 = new Date(to);
+        window_days = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24));
+      }
+      
+      // Update global state with window
+      state.windowDays = window_days;
+      
+      const p = new URLSearchParams({
+        sales_window: window_days,
+        target_days: $("target_days").value,
+        // Legacy include_zero (still sent for backward compat) + new product_scope
+        include_zero: $("include_zero").checked ? "1" : "0",
+        product_scope: $("product_scope").value,
+        q: $("q").value.trim()
+      });
+      for (const s of getSelectedSuppliers()) p.append("supplier", s);
+      return p;
+    }
+    function formatNumber(n) { if (n == null || isNaN(n)) return ""; return Number(n).toLocaleString(); }
+    function visibleRows(){
+      const minQ = parseInt($("min_qty").value || "0", 10);
+      const onlyNeg = $("only_negative").checked;
+      const onlyToOrder = $("only_to_order") ? $("only_to_order").checked : true;
+      const selectedSuppliers = getSelectedSuppliers();
+      
+      let rows = state.rows.filter(r => {
+        const qty = effectiveQty(r);
+        if (qty < minQ) return false;
+        if (onlyToOrder && qty <= 0) return false;
+        
+        // Filter by selected suppliers (if any)
+        if (selectedSuppliers.length > 0) {
+          const supplierName = (r.supplier_name || "").toUpperCase().trim();
+          if (!selectedSuppliers.some(s => s.toUpperCase() === supplierName)) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      if (onlyNeg) rows = rows.filter(r => Number(r.current_stock) < 0);
+      // Simple sort support: by qty_to_order using effectiveQty
+      if (state.sort && state.sort.key === "qty_to_order"){
+        const dir = state.sort.dir === "asc" ? 1 : -1;
+        rows = rows.slice().sort((a,b)=> (effectiveQty(a) - effectiveQty(b)) * dir);
+      }
+      return rows;
+    }
+    function renderHeader() {
+      const thead = $("thead"); thead.innerHTML = "";
+      state.columns.filter(c=>c.vis).forEach(c => { 
+        const th = document.createElement("th"); 
+        th.dataset.key = c.key;
+        const isSorted = state.sort && state.sort.key === c.key;
+        if (isSorted) th.classList.add('sorted');
+        
+        // Dynamic label for AVG/WINDOW column
+        if (c.key === "avg_window") {
+          th.textContent = `AVG/${state.windowDays}D`;
+        } else {
+          th.textContent = c.label;
+        }
+        
+        // Add sort indicator if this column is sorted
+        if (isSorted) {
+          const arrow = document.createElement('span');
+          arrow.className = 'sort-indicator';
+          arrow.textContent = state.sort.dir === "asc" ? " ↑" : " ↓";
+          th.appendChild(arrow);
+        }
+        
+        // Make header clickable for sorting (skip for computed columns)
+        if (!c.computed) {
+          th.style.cursor = "pointer";
+          th.title = `Kliko për të renditur sipas ${c.label}`;
+          th.addEventListener("click", ()=>{
+            if (!state.sort || state.sort.key !== c.key) {
+              state.sort = { key: c.key, dir: "desc" };
+            } else {
+              state.sort.dir = (state.sort.dir === "desc") ? "asc" : "desc";
+            }
+            renderAll();
+          });
+        }
+        
+        thead.appendChild(th); 
+      });
+    }
+    function renderRows() {
+      const tb = $("tbody");
+      tb.innerHTML = visibleRows().map((r, idx) => {
+        const rowId = r.sifra || idx;
+        const isEdited = state.edits[rowId];
+        const isNeg = Number(r.current_stock) < 0;
+        const tds = state.columns.filter(c=>c.vis).map(c => {
+            let v;
+          
+            // Computed columns
+            if (c.key === "avg_monthly" && r.avg_daily_sales != null) {
+              v = r.avg_daily_sales * 30;
+            } else if (c.key === "avg_window" && r.avg_daily_sales != null) {
+              v = r.avg_daily_sales * state.windowDays;
+            } else {
+              v = r[c.key];
+            }
+          
+          // Editable qty field - use DB value or target-based (if ignore_minz)
+          if (c.key === "qty_to_order") {
+            let baseQty;
+            let tooltip = '';
+            if ($("ignore_minz").checked) {
+              baseQty = computeQtyFromTarget(r);
+              tooltip = 'Target-based calculation';
+            } else {
+              // DB qty with optional smart rounding
+              const dbQty = Math.max(0, Math.round(v || 0));
+              if ($("smart_rounding") && $("smart_rounding").checked) {
+                const moq = Number(r.moq) || 0;
+                const result = applyRoundingRules(dbQty, moq);
+                baseQty = result.qty;
+                tooltip = `Raw: ${dbQty} → ${baseQty} (${result.rule})`;
+              } else {
+                baseQty = dbQty;
+                tooltip = `DB qty: ${dbQty}`;
+              }
+            }
+            const editVal = isEdited && isEdited.qty !== undefined ? isEdited.qty : baseQty;
+            return `<td><input type="number" class="cell-edit ${isEdited ? 'edited' : ''}" data-row="${rowId}" data-field="qty" value="${editVal}" min="0" step="1" title="${tooltip}" /></td>`;
+          }
+          
+          // Editable pack field (if exists)
+          if (c.key === "pakovanje") {
+            const editVal = isEdited && isEdited.pack !== undefined ? isEdited.pack : v;
+            return `<td><input type="number" class="cell-edit ${isEdited ? 'edited' : ''}" data-row="${rowId}" data-field="pack" value="${editVal}" min="1" step="1" /></td>`;
+          }
+          
+          // Supplier badge with color coding
+          if (c.key === "supplier_name" && v) {
+            return `<td><span class="badge-supplier badge-${v}">${v}</span></td>`;
+          }
+          
+          // Format numbers for display
+          if (typeof v === "number") v = formatNumber(v);
+          return `<td>${v ?? ""}</td>`;
+        }).join("");
+        const cls = [isEdited ? 'edited' : '', isNeg ? 'neg' : ''].filter(Boolean).join(' ');
+        return `<tr class="${cls}" data-row="${rowId}">${tds}</tr>`;
+      }).join("");
+      
+      // Attach edit listeners
+      tb.querySelectorAll(".cell-edit").forEach(input => {
+        input.addEventListener("change", (e) => {
+          const rowId = e.target.dataset.row;
+          const field = e.target.dataset.field;
+          const value = parseFloat(e.target.value) || 0;
+          
+          if (!state.edits[rowId]) state.edits[rowId] = {};
+          state.edits[rowId][field] = value;
+          
+          // Re-render to show edited state
+          renderRows();
+          renderTotals();
+        });
+      });
+    }
+    
+    /**
+     * Smart Order Rounding Rules
+     * Based on business logic from auto-porosi.js
+     * 
+     * Rules:
+     * - qty < 10: ceil to whole number
+     * - 10-15: standardize to 15
+     * - 16-20: standardize to 20  
+     * - qty > 20: round to nearest 5x
+     * - MOQ enforcement (if applicable)
+     */
+    function applyRoundingRules(rawQty, moq = 0) {
+      let qty = Math.max(0, rawQty);
+      let rule = '';
+      
+      if (qty <= 0) {
+        return { qty: 0, rule: 'zero_or_negative' };
+      }
+      
+      // Apply rounding rules based on quantity ranges
+      if (qty < 10) {
+        // Small quantities: round up to nearest whole number
+        qty = Math.ceil(qty);
+        rule = 'ceil <10';
+      } else if (qty <= 15) {
+        // 10-15 range: standardize to 15
+        qty = 15;
+        rule = '10-15 → 15';
+      } else if (qty <= 20) {
+        // 16-20 range: standardize to 20
+        qty = 20;
+        rule = '16-20 → 20';
+      } else {
+        // qty > 20: round to nearest multiple of 5
+        const original = qty;
+        qty = Math.ceil(qty / 5) * 5;
+        rule = `>20 → ${qty} (5x)`;
+      }
+      
+      // Enforce MOQ if specified
+      if (moq && moq > 0 && qty < moq) {
+        qty = moq;
+        rule += ` +MOQ=${moq}`;
+      }
+      
+      return { qty: Math.round(qty), rule };
+    }
+    
+    // Calculate qty using target only (ignoring MINZ)
+    function computeQtyFromTarget(row){
+      const avg = Number(row.avg_daily_sales) || 0;
+      const stock = Number(row.current_stock) || 0;
+      const tgt = parseInt($("target_days").value || "28", 10);
+      const need = Math.ceil(avg * tgt) - stock;
+      const rawQty = Math.max(0, need);
+      
+      // Apply smart rounding if enabled
+      if ($("smart_rounding") && $("smart_rounding").checked) {
+        const moq = Number(row.moq) || 0;
+        const result = applyRoundingRules(rawQty, moq);
+        return result.qty;
+      }
+      
+      return rawQty;
+    }
+
+    // Get effective qty: use edited value if exists; else DB qty or target-based if 'ignore_minz' is on
+    function effectiveQty(row) {
+      const id = row.sifra || row.barkod || row.emri;
+      const ed = state.edits[id];
+      
+      let baseQty;
+      if ($("ignore_minz").checked) {
+        baseQty = computeQtyFromTarget(row);
+      } else {
+        const dbQty = Math.max(0, Math.round(row.qty_to_order || 0));
+        if ($("smart_rounding") && $("smart_rounding").checked) {
+          const moq = Number(row.moq) || 0;
+          const result = applyRoundingRules(dbQty, moq);
+          baseQty = result.qty;
+        } else {
+          baseQty = dbQty;
+        }
+      }
+      
+      return (ed && ed.qty != null) ? ed.qty : baseQty;
+    }
+    
+    function renderTotals() {
+      const rows = visibleRows();
+      $("kpi_items").innerText = rows.length;
+      const sumQty = rows.reduce((a, r) => a + effectiveQty(r), 0);
+      const sumStock = rows.reduce((a, b) => a + (Number(b.current_stock) || 0), 0);
+      // Calculate total value using effective_price × qty
+      const sumValue = rows.reduce((a, r) => {
+        const qty = effectiveQty(r);
+        const price = Number(r.effective_price) || Number(r.base_price) || 0;
+        return a + (qty * price);
+      }, 0);
+      
+      $("kpi_qty").innerText = formatNumber(sumQty);
+      $("t_rows").innerText = formatNumber(rows.length);
+      $("t_qty").innerText = formatNumber(sumQty);
+      $("t_stock").innerText = formatNumber(sumStock);
+      $("t_value").innerText = sumValue > 0 ? formatNumber(sumValue.toFixed(2)) + " RSD" : "—";
+    }
+    function renderChips(){
+      const chips = $("chips");
+      const from = $("date_from").value;
+      const to = $("date_to").value;
+      const params = Object.fromEntries(paramsBase().entries());
+      const entries = [];
+      if (from && to) entries.push(["date_range", `${from} → ${to} (${params.sales_window}d)`]);
+      else entries.push(["sales_window", params.sales_window + "d"]);
+      entries.push(["target_days", params.target_days]);
+    // Product scope chip (shows meaning) + legacy include_zero only if checked
+    entries.push(["scope", params.product_scope === "all" ? "të gjitha" : "me shitje"]);
+    if (params.include_zero === "1") entries.push(["include_zero", "yes"]);
+  const minQ = parseInt($("min_qty").value||"0",10);
+  if (minQ>0) entries.push(["min_qty", String(minQ)]);
+  if ($("only_negative").checked) entries.push(["only_negative", "yes"]);
+  if ($("only_to_order") && $("only_to_order").checked) entries.push(["only_to_order", "yes"]);
+  if ($("ignore_minz").checked) entries.push(["ignore_minz", "yes"]);
+      if (params.q) entries.push(["q", params.q]);
+      const sups = getSelectedSuppliers();
+      if (sups.length) entries.push(["supplier", sups.join(", ")]);
+      chips.innerHTML = entries.map(([k,v]) => `
+        <div class="chip2"><span>${k}:</span><b>${v}</b><span class="x" data-k="${k}">✕</span></div>
+      `).join("");
+      chips.querySelectorAll(".x").forEach(el=>{
+        el.addEventListener("click", ()=> {
+          const k = el.getAttribute("data-k");
+          if (k === "q") $("q").value = "";
+            if (k === "include_zero") $("include_zero").checked = false;
+          if (k === "scope") { $("product_scope").value = "sales"; }
+          if (k === "date_range") { const today = new Date(); const past30 = new Date(today); past30.setDate(today.getDate() - 30); $("date_to").value = today.toISOString().split('T')[0]; $("date_from").value = past30.toISOString().split('T')[0]; }
+          if (k === "target_days") $("target_days").value = "28";
+          if (k === "min_qty") $("min_qty").value = "0";
+          if (k === "only_negative") $("only_negative").checked = false;
+          if (k === "only_to_order" && $("only_to_order")) $("only_to_order").checked = true;
+          if (k === "ignore_minz") $("ignore_minz").checked = false;
+          if (k === "supplier") { Array.from($("supplier").options).forEach(o=>o.selected=false); }
+          fetchOrders();
+        });
+      });
+    }
+    function renderAll(){ renderHeader(); renderRows(); renderTotals(); renderChips(); }
+    
+    function showSkeleton() {
+      const tb = $("tbody");
+      tb.innerHTML = Array(10).fill(0).map(() => '<tr><td colspan="9"><div class="skeleton skeleton-row"></div></td></tr>').join("");
+    }
+    
+    async function fetchOrders() {
+      const err = $("err"); if (err) err.style.display = "none";
+      showSkeleton();
+      const params = paramsBase();
+      try {
+        // 🚀 UPDATED: Use new snapshot-based v2 API endpoint
+        const res = await fetch(`/api/orders/v2?${params.toString()}`);
+        if (!res.ok) { const text = await res.text(); throw new Error(`HTTP ${res.status}: ${text.slice(0,200)}`); }
+        state.rows = await res.json();
+        state.edits = {}; // Clear edits on fresh fetch
+        renderAll();
+        showToast(`Loaded ${state.rows.length} orders`, 'success');
+      } catch (e) {
+        if (err) { err.innerText = `Gabim gjatë ngarkimit: ${e.message || e}`; err.style.display = "block"; }
+        state.rows = []; renderAll();
+        showToast(`Error: ${e.message || e}`, 'error');
+      }
+    }
+    function download(kind) { const params = paramsBase(); params.set("download", kind); window.location.href = `/api/orders?${params.toString()}`; }
+    function openCols(){
+      const modal = $("modalCols"); if (!modal) return; modal.style.display = "flex";
+      const box = $("colsList"); box.innerHTML = "";
+      state.columns.forEach((c,i)=>{
+        const id = "col_" + i;
+        const wrap = document.createElement("label"); wrap.style.padding="6px 8px";
+        wrap.innerHTML = `<input type="checkbox" id="${id}" ${c.vis ? "checked":""}/> ${c.label}`;
+        box.appendChild(wrap);
+        wrap.querySelector("input").addEventListener("change", (ev)=>{ state.columns[i].vis = ev.target.checked; });
+      });
+    }
+    function applyCols(){ localStorage.setItem(KEY_COLS, JSON.stringify(state.columns)); $("modalCols").style.display = "none"; renderAll(); }
+    function resetCols(){ state.columns = JSON.parse(JSON.stringify(defaultColumns)); localStorage.setItem(KEY_COLS, JSON.stringify(state.columns)); renderAll(); }
+  function currentFilters(){ return { date_from:$("date_from").value, date_to:$("date_to").value, target_days:$("target_days").value, include_zero:$("include_zero").checked ? "1" : "0", product_scope:$("product_scope").value, min_qty:$("min_qty").value, only_negative:$("only_negative").checked ? "1" : "0", ignore_minz:$("ignore_minz").checked ? "1" : "0", q:$("q").value.trim(), suppliers:getSelectedSuppliers() }; }
+    function setFilters(f){
+      if (f.date_from) $("date_from").value = f.date_from;
+      if (f.date_to) $("date_to").value = f.date_to;
+      $("target_days").value = f.target_days ?? "28";
+    $("include_zero").checked = (f.include_zero === "1");
+    if (f.product_scope) { $("product_scope").value = f.product_scope; }
+  if (f.min_qty != null) $("min_qty").value = f.min_qty;
+      if (f.only_negative != null) $("only_negative").checked = (f.only_negative === "1");
+    if (f.ignore_minz != null) $("ignore_minz").checked = (f.ignore_minz === "1");
+      $("q").value = f.q ?? "";
+      Array.from($("supplier").options).forEach(o => o.selected = (f.suppliers||[]).includes(o.value));
+    }
+    function loadViews(){ try { return JSON.parse(localStorage.getItem(KEY_VIEWS) || "{}"); } catch(_) { return {}; } }
+    function saveViews(obj){ localStorage.setItem(KEY_VIEWS, JSON.stringify(obj)); }
+    function openViews(){
+      const modal = $("modalViews"); modal.style.display = "flex";
+      const views = loadViews(); const list = $("viewsList"); list.innerHTML = "";
+      const names = Object.keys(views);
+      if (!names.length) { list.innerHTML = '<div class="muted">S’ka views të ruajtura.</div>'; return; }
+      names.forEach(name => {
+        const v = views[name];
+        const card = document.createElement("div");
+        card.style.border = "1px solid var(--border)"; card.style.borderRadius = "12px";
+        card.style.padding = "10px"; card.style.background = "var(--chip)";
+        card.innerHTML = `<b>${name}</b><div class="muted">${JSON.stringify(v.filters)}</div>
+          <div class="hr"></div>
+          <div class="right">
+            <button class="ghost btnLoad">Load</button>
+            <button class="warn btnDel">Delete</button>
+          </div>`;
+        card.querySelector(".btnLoad").addEventListener("click", ()=>{
+          setFilters(v.filters); if (v.columns) { state.columns = v.columns; localStorage.setItem(KEY_COLS, JSON.stringify(state.columns)); }
+          $("modalViews").style.display = "none"; fetchOrders();
+        });
+        card.querySelector(".btnDel").addEventListener("click", ()=>{
+          const vv = loadViews(); delete vv[name]; saveViews(vv); openViews();
+        });
+        list.appendChild(card);
+      });
+    }
+    function saveView(){ $("modalSave").style.display = "flex"; $("viewName").value = ""; }
+    function doSaveView(){
+      const name = $("viewName").value.trim(); const scope = $("viewScope").value;
+      if (!name) { alert("Vendos emrin e view"); return; }
+      const views = loadViews(); const entry = { filters: currentFilters() };
+      if (scope === "withCols") entry.columns = state.columns;
+      views[name] = entry; saveViews(views); $("modalSave").style.display = "none";
+    }
+    function clearViews(){ localStorage.removeItem(KEY_VIEWS); openViews(); }
+    window.addEventListener("keydown", (e)=>{
+      if (document.getElementById("view-porosi").classList.contains("active")){
+        if (e.key === "/") { e.preventDefault(); $("q").focus(); }
+        if (e.key === "f") { fetchOrders(); }
+        if (e.key === "e") { download("xlsx"); }
+        if (e.key === "c") { openCols(); }
+        if (e.key === "v") { openViews(); }
+      }
+    });
+    document.addEventListener("click", (ev)=>{
+      const id = ev.target.id;
+      if (id === "btnFetch") fetchOrders();
+      if (id === "btnCsv") download("csv");
+      if (id === "btnXlsx") download("xlsx");
+      if (id === "btnColumns") openCols();
+      if (id === "btnViews") openViews();
+      if (id === "btnSaveView") saveView();
+      if (id === "colsApply") applyCols();
+      if (id === "colsReset") resetCols();
+      if (id === "viewsClear") clearViews();
+      if (id === "saveDo") doSaveView();
+      if (id === "saveCancel") $("modalSave").style.display="none";
+      if (id === "btnApprove") openApprove();
+      if (id === "approveDo") submitApprove();
+      if (id === "approveCancel" || id === "approveClose") $("modalApprove").style.display="none";
+    });
+    ["modalCols","modalViews","modalSave","modalApprove"].forEach(id=>{
+      const el = $(id); el.addEventListener("click", (e)=>{ if (e.target.id === id) el.style.display="none"; });
+    });
+    
+    // Approve Order Flow
+    function openApprove() {
+      const modal = $("modalApprove");
+      const totalQty = state.rows.reduce((a, r) => a + effectiveQty(r), 0);
+      $("approveItems").textContent = state.rows.length;
+      $("approveQty").textContent = formatNumber(totalQty);
+      $("approvedBy").value = "";
+      $("approveSupplier").value = "";
+      modal.style.display = "flex";
+      setTimeout(() => $("approvedBy").focus(), 100);
+    }
+    
+    async function submitApprove() {
+      const approvedBy = $("approvedBy").value.trim();
+      if (!approvedBy) {
+        showToast("Ju lutem shkruani emrin tuaj", "error");
+        return;
+      }
+      
+      const supplier = $("approveSupplier").value || "ALL";
+      // Capture current inputs (including auto-calculated when 'ignore_minz' is on)
+      try {
+        document.querySelectorAll("#tbody input.cell-edit[data-field='qty']").forEach(inp=>{
+          const rowId = inp.getAttribute("data-row");
+          const val = parseInt(inp.value||"0",10) || 0;
+          if (!state.edits[rowId]) state.edits[rowId] = {};
+          state.edits[rowId].qty = val;
+        });
+      } catch(_) {}
+      const payload = {
+        approved_by: approvedBy,
+        filters: Object.fromEntries(paramsBase().entries()),
+        edits: state.edits
+      };
+      
+      try {
+        $("approveDo").disabled = true;
+        $("approveDo").textContent = "Submitting...";
+        
+        const res = await fetch(`/api/orders/${supplier}`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+        
+        if (!res.ok) throw new Error(await res.text());
+        
+        const result = await res.json();
+        $("modalApprove").style.display = "none";
+        
+        // Build success message
+        let msg = `✓ Order saved: ${result.items} items`;
+        if (result.total_rsd) msg += ` (${result.total_rsd.toLocaleString()} RSD)`;
+        if (result.csv) msg += ` → ${result.csv.split('\\').pop()}`;
+        
+        showToast(msg, "success");
+        
+        // Clear edits after successful submit
+        state.edits = {};
+        renderRows();
+        renderTotals();
+      } catch (err) {
+        showToast(`Error: ${err.message}`, "error");
+      } finally {
+        $("approveDo").disabled = false;
+        $("approveDo").textContent = "Submit Order";
+      }
+    }
+    
+    // Initialize date pickers with default values (last 30 days)
+    (function initDates(){
+      const today = new Date();
+      const past30 = new Date(today); 
+      past30.setDate(today.getDate() - 30);
+      $("date_to").value = today.toISOString().split('T')[0];
+      $("date_from").value = past30.toISOString().split('T')[0];
+    })();
+    
+    // Auto-refresh on filter changes
+    (function setupAutoRefresh(){
+      let refreshTimer;
+      const autoRefresh = () => {
+        clearTimeout(refreshTimer);
+        // Add pulse animation to button
+        $("btnFetch").classList.add('pulse');
+        refreshTimer = setTimeout(() => {
+          fetchOrders();
+          $("btnFetch").classList.remove('pulse');
+        }, 800); // Debounce 800ms
+      };
+      
+      // Date range changes
+      $("date_from").addEventListener('change', autoRefresh);
+      $("date_to").addEventListener('change', autoRefresh);
+      
+      // Target days change
+      $("target_days").addEventListener('change', autoRefresh);
+      
+      // Supplier multi-select
+      $("supplier").addEventListener('change', autoRefresh);
+      
+      // Include zero checkbox
+      $("include_zero").addEventListener('change', autoRefresh);
+  // Product scope change
+  $("product_scope").addEventListener('change', autoRefresh);
+      
+      // Search input (with longer debounce)
+      let searchTimer;
+      $("q").addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        $("btnFetch").classList.add('pulse');
+        searchTimer = setTimeout(() => {
+          fetchOrders();
+          $("btnFetch").classList.remove('pulse');
+        }, 1200); // 1.2s debounce for search
+      });
+      
+      // Keyboard shortcut: Press "/" to focus search
+      window.addEventListener('keydown', (e) => {
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+          e.preventDefault();
+          $("q").focus();
+        }
+      });
+    })();
+    
+    // Start
+    loadSuppliers().then(() => {
+      fetchOrders();
+    }).catch(err => {
+      console.error("Failed to initialize:", err);
+      fetchOrders(); // Continue even if suppliers fail
+    });
+    
+    // ============ FAKTURA AI FUNCTIONS ============
+    function fakturaUpload() {
+      document.getElementById('fakturaUploadZone').style.display = 'block';
+    }
+    
+    async function handleFakturaUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        $('fakturaUploadZone').innerHTML = '<p>⏳ Processing ' + file.name + '...</p>';
+        
+        const res = await fetch('/api/faktura/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        // Defensive: server might return HTML error (404/500) → parse as text then try JSON
+        let data;
+        if (!res.ok) {
+          const text = await res.text();
+          try { data = JSON.parse(text); } catch {
+            throw new Error((text || 'Upload failed').slice(0, 400));
+          }
+          if (!data || data.error) throw new Error(data?.error || 'Upload failed');
+        } else {
+          try { data = await res.json(); } catch {
+            const text = await res.text();
+            throw new Error((text || 'Invalid response').slice(0, 400));
+          }
+        }
+        
+        // Show success message
+        const status = data.validation.status;
+        const statusColor = status === 'CLEAN' ? '#10b981' : '#f59e0b';
+        const statusEmoji = status === 'CLEAN' ? '✅' : '⚠️';
+        
+        $('fakturaUploadZone').innerHTML = `
+          <div style="text-align:left; padding:20px; background:var(--panel); border-radius:12px;">
+            <h3 style="margin-top:0;">${statusEmoji} ${status}</h3>
+            <p><b>Invoice:</b> ${data.header.invoice_no || 'N/A'}</p>
+            <p><b>Supplier:</b> ${data.header.supplier || 'N/A'}</p>
+            <p><b>Date:</b> ${data.header.invoice_date || 'N/A'}</p>
+            <p><b>Items:</b> ${data.validation.total_items} (${data.validation.matched} matched, ${data.validation.match_rate_pct}%)</p>
+            <p><b>Total:</b> ${data.validation.total_calc} ${data.header.currency || 'RSD'}</p>
+            ${data.validation.total_header ? `<p><b>Header Total:</b> ${data.validation.total_header}</p>` : ''}
+            <div style="margin-top:16px;">
+              <button class="primary" onclick="loadFaktura(); document.getElementById('fakturaUploadZone').style.display='none';">View All Invoices</button>
+              <button class="ghost" onclick="fakturaUpload()" style="margin-left:8px;">Upload Another</button>
+            </div>
+          </div>
+        `;
+        
+      } catch (err) {
+        $('fakturaUploadZone').innerHTML = `
+          <div style="color:#f87171; text-align:left;">
+            <h3>❌ Upload Failed</h3>
+            <p>${err.message}</p>
+            <button class="primary" onclick="fakturaUpload()">Try Again</button>
+          </div>
+        `;
+      }
+    }
+    
+    async function loadFaktura() {
+      const dateInput = document.getElementById('fakturaDate');
+      if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+      }
+      
+      const dateStr = dateInput.value.replace(/-/g, '');
+      
+      try {
+        const res = await fetch(`/api/faktura/list?date=${dateStr}`);
+        // Defensive JSON parsing for HTML error responses
+        let data;
+        if (!res.ok) {
+          const text = await res.text();
+          try { data = JSON.parse(text); } catch {
+            throw new Error((text || 'Failed to load invoices').slice(0, 400));
+          }
+        } else {
+          try { data = await res.json(); } catch {
+            const text = await res.text();
+            throw new Error((text || 'Invalid list response').slice(0, 400));
+          }
+        }
+        const invoices = data.invoices || [];
+        
+        document.getElementById('fakturaCount').textContent = invoices.length;
+        
+        if (invoices.length === 0) {
+          document.getElementById('fakturaList').innerHTML = '<p style="text-align:center; padding:40px; color:#9ca3af;">No invoices found for this date.</p>';
+          return;
+        }
+        
+        let html = '<div style="display:grid; gap:12px;">';
+        
+        for (const inv of invoices) {
+          html += `
+            <div style="background:var(--chip); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:700; font-size:16px; margin-bottom:4px;">📄 ${inv.invoice_no}</div>
+                <div style="font-size:13px; color:#9ca3af;">
+                  <span>${inv.supplier || 'Unknown'}</span>
+                  ${inv.invoice_date ? ` • ${inv.invoice_date}` : ''}
+                  • ${inv.items || 0} items
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="ghost" onclick="downloadFaktura('${dateStr}', '${inv.invoice_no}', 'header')" title="Download Header">📋 Header</button>
+                <button class="ghost" onclick="downloadFaktura('${dateStr}', '${inv.invoice_no}', 'items')" title="Download Items">📦 Items</button>
+              </div>
+            </div>
+          `;
+        }
+        
+        html += '</div>';
+        document.getElementById('fakturaList').innerHTML = html;
+        
+      } catch (err) {
+        document.getElementById('fakturaList').innerHTML = `<p style="color:#f87171; padding:20px;">Error: ${err.message}</p>`;
+      }
+    }
+    
+    function downloadFaktura(date, invoiceNo, fileType) {
+      window.location.href = `/api/faktura/download/${date}/${invoiceNo}/${fileType}`;
+    }
+    
+    // ===== NEW: Pending Faktura Management =====
+    
+    async function loadPendingFaktura() {
+      try {
+        const res = await fetch('/api/faktura/pending');
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error || 'Failed to load pending invoices');
+        
+        const pending = data.pending || [];
+        document.getElementById('pendingCount').textContent = pending.length;
+        
+        const tbody = document.getElementById('pendingTableBody');
+        
+        if (pending.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:#9ca3af;">No pending invoices. Upload XML files to begin.</td></tr>';
+          return;
+        }
+        
+        let html = '';
+        for (const inv of pending) {
+          const hasError = inv.error || inv.supplier === 'PARSE_ERROR';
+          const rowClass = hasError ? 'style="background:#7f1d1d22;"' : '';
+          
+          html += `
+            <tr ${rowClass}>
+              <td style="padding:12px;">
+                <div style="font-weight:600;">${inv.filename}</div>
+                <div style="font-size:11px; color:#64748b;">${inv.size_kb} KB • ${new Date(inv.uploaded_at).toLocaleString()}</div>
+              </td>
+              <td style="padding:12px;">${hasError ? '<span style="color:#f87171;">⚠️ PARSE ERROR</span>' : inv.supplier}</td>
+              <td style="padding:12px;">${inv.invoice_no}</td>
+              <td style="padding:12px; text-align:center;">${inv.items_count}</td>
+              <td style="padding:12px; text-align:center;">${inv.invoice_date || 'N/A'}</td>
+              <td style="padding:12px; text-align:right;">
+                ${hasError ? 
+                  `<button class="ghost" onclick="alert('Parse error: ${(inv.error || '').replace(/'/g, "\\'")}')" style="font-size:12px; color:#f87171;">🛑 Error</button>` :
+                  `<button class=\"ghost\" data-path=\"${inv.path}\" onclick=\"previewFaktura(this.dataset.path)\" style=\"font-size:12px;\">🔍 Preview</button>
+                   <button class=\"primary\" data-path=\"${inv.path}\" data-filename=\"${inv.filename}\" onclick=\"executeFaktura(this.dataset.path, this.dataset.filename)\" style=\"font-size:12px; margin-left:4px;\">⚡ Execute</button>`
+                }
+              </td>
+            </tr>
+          `;
+        }
+        
+        tbody.innerHTML = html;
+        
+      } catch (err) {
+        document.getElementById('pendingTableBody').innerHTML = `<tr><td colspan="6" style="color:#f87171; padding:20px; text-align:center;">Error: ${err.message}</td></tr>`;
+      }
+    }
+    
+    async function previewFaktura(xmlPath) {
+      try {
+        const modal = document.getElementById('previewModal');
+        const content = document.getElementById('previewContent');
+        content.innerHTML = '<p style="text-align:center; color:#9ca3af;">Loading preview...</p>';
+        modal.style.display = 'block';
+        
+        const res = await fetch('/api/faktura/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ xml_path: xmlPath })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Preview failed');
+        
+        const { header, items, matched_count, total_items, match_rate_pct, estimated_total } = data;
+        
+        let html = `
+          <div style="background:#0f172a; border-radius:12px; padding:20px; margin-bottom:20px;">
+            <h3 style="color:#e2e8f0; margin-top:0;">📄 Header Info</h3>
+            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; color:#cbd5e1; font-size:14px;">
+              <div><strong>Supplier:</strong> ${header.supplier || 'N/A'}</div>
+              <div><strong>Invoice #:</strong> ${header.invoice_no || 'N/A'}</div>
+              <div><strong>Date:</strong> ${header.invoice_date || 'N/A'}</div>
+              <div><strong>Currency:</strong> ${header.currency || 'N/A'}</div>
+              <div><strong>Total Amount:</strong> ${header.total_amount || 'N/A'}</div>
+              <div><strong>Items Count:</strong> ${total_items}</div>
+            </div>
+          </div>
+          
+          <div style="background:#0f172a; border-radius:12px; padding:20px; margin-bottom:20px;">
+            <h3 style="color:#e2e8f0; margin-top:0;">📊 Matching Statistics</h3>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
+              <div style="text-align:center;">
+                <div style="font-size:32px; font-weight:700; color:#4ade80;">${matched_count}</div>
+                <div style="font-size:12px; color:#94a3b8;">Matched Items</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:32px; font-weight:700; color:#60a5fa;">${match_rate_pct}%</div>
+                <div style="font-size:12px; color:#94a3b8;">Match Rate</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:32px; font-weight:700; color:#fbbf24;">${estimated_total.toFixed(2)}</div>
+                <div style="font-size:12px; color:#94a3b8;">Estimated Total</div>
+              </div>
+            </div>
+          </div>
+          
+          <div style="background:#0f172a; border-radius:12px; padding:20px;">
+            <h3 style="color:#e2e8f0; margin-top:0;">📦 Items (${items.length})</h3>
+            <div style="max-height:400px; overflow-y:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead style="position:sticky; top:0; background:#1e293b; color:#94a3b8;">
+                  <tr>
+                    <th style="padding:8px; text-align:left;">Sifra</th>
+                    <th style="padding:8px; text-align:left;">Name</th>
+                    <th style="padding:8px; text-align:right;">Qty</th>
+                    <th style="padding:8px; text-align:right;">Price</th>
+                    <th style="padding:8px; text-align:right;">Rabat%</th>
+                    <th style="padding:8px; text-align:right;">Total</th>
+                  </tr>
+                </thead>
+                <tbody style="color:#cbd5e1;">
+        `;
+        
+        for (const item of items) {
+          const qty = parseFloat(item.qty || 0);
+          const price = parseFloat(item.price || 0);
+          const rabat = parseFloat(item.rabat_pct || 0);
+          const net = price * (1 - rabat/100);
+          const total = qty * net;
+          
+          html += `
+            <tr style="border-top:1px solid #334155;">
+              <td style="padding:8px;">${item.sifra || 'N/A'}</td>
+              <td style="padding:8px;">${item.name || 'N/A'}</td>
+              <td style="padding:8px; text-align:right;">${qty.toFixed(0)}</td>
+              <td style="padding:8px; text-align:right;">${price.toFixed(2)}</td>
+              <td style="padding:8px; text-align:right;">${rabat.toFixed(2)}</td>
+              <td style="padding:8px; text-align:right; font-weight:600;">${total.toFixed(2)}</td>
+            </tr>
+          `;
+        }
+        
+        html += `
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        
+        content.innerHTML = html;
+        
+      } catch (err) {
+        document.getElementById('previewContent').innerHTML = `<p style="color:#f87171; text-align:center;">Error: ${err.message}</p>`;
+      }
+    }
+    
+    function closePreview() {
+      document.getElementById('previewModal').style.display = 'none';
+    }
+    
+    async function executeFaktura(xmlPath, filename) {
+      if (!confirm(`⚠️ Import invoice "${filename}" to ERP database?\n\nThis will create:\n- kalkopste (header)\n- kalkstavke (items)\n- kalkkasa (payment terms)\n\nProceed?`)) {
+        return;
+      }
+      
+      try {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = '⏳ Importing...';
+        
+        const res = await fetch('/api/faktura/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            xml_path: xmlPath,
+            magacin: '101',
+            periodid: 4,
+            userid: 14,
+            dry_run: false
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || 'Import failed');
+        }
+        
+        alert(`✅ Import successful!\n\nKalkID: ${data.kalkid}\nBroj: ${data.broj}\nItems: ${data.items_inserted}\n\n${data.message}`);
+        
+        // Reload pending list
+        loadPendingFaktura();
+        
+      } catch (err) {
+        alert(`❌ Import failed:\n\n${err.message}`);
+        event.target.disabled = false;
+        event.target.textContent = '⚡ Execute';
+      }
+    }
+
+    async function fetchFromEFaktura() {
+      try {
+        const days = prompt('Fetch how many days back from eFaktura?', '7');
+        if (days === null) return;
+        const res = await fetch('/api/faktura/efaktura-pull', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ days: parseInt(days || '7', 10) || 7 })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Fetch failed');
+        alert(`Fetched ${data.fetched} invoices from eFaktura.`);
+        loadPendingFaktura();
+      } catch (err) {
+        alert('eFaktura fetch error: ' + err.message);
+      }
+    }
+    
+    // ============ SERBIA EFAKTURA FUNCTIONS ============
+    // The following functions are left in place if we later re-enable eFaktura UI.
+    // They won't be called because the sidebar link is commented out above.
+    async function loadSerbiaInvoices() {
+      try {
+        const tbody = document.getElementById('serbiaInvoicesTableBody');
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:40px; text-align:center;">⏳ Loading...</td></tr>';
+        
+        const res = await fetch('/api/serbia/purchase-invoices');
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const invoices = await res.json();
+        
+        if (!Array.isArray(invoices) || invoices.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding:40px; text-align:center; color:#64748b;">No invoices found</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = invoices.map(inv => `
+          <tr>
+            <td style="padding:12px;">${inv.invoiceId || 'N/A'}</td>
+            <td style="padding:12px;">${inv.status || 'N/A'}</td>
+            <td style="padding:12px;">${inv.cirStatus || 'N/A'}</td>
+            <td style="padding:12px;">${inv.comment || ''}</td>
+            <td style="padding:12px;">${inv.lastModifiedUtc ? new Date(inv.lastModifiedUtc).toLocaleString() : 'N/A'}</td>
+            <td style="padding:12px; text-align:center;">
+              <button class="ghost" onclick="downloadSerbiaXML('${inv.invoiceId}')" title="Download XML">📥</button>
+              <button class="ghost" onclick="previewSerbiaInvoice('${inv.invoiceId}')" title="Preview Invoice">👁️</button>
+              <button class="primary" onclick="executeSerbiaInvoice('${inv.invoiceId}')" title="Execute Import">⚡</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        document.getElementById('serbiaInvoicesTableBody').innerHTML = `<tr><td colspan="6" style="padding:40px; text-align:center; color:#f87171;">Error: ${err.message}</td></tr>`;
+      }
+    }
+    
+    async function fetchSerbiaEFaktura() {
+      if (!confirm('⬇️ Fetch latest invoices from Serbia eFaktura API?\n\nThis may take a few seconds.')) return;
+      
+      try {
+        const res = await fetch('/api/serbia/fetch-efaktura', { method: 'POST' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        alert(`✅ Fetched ${data.fetched || 0} invoices from Serbia eFaktura.`);
+        loadSerbiaInvoices(); // Reload list
+      } catch (err) {
+        alert(`❌ Error: ${err.message}`);
+      }
+    }
+    
+    async function downloadSerbiaXML(invoiceId) {
+      try {
+        const res = await fetch(`/api/serbia/purchase-invoice/xml/${invoiceId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const xml = await res.text();
+        
+        const blob = new Blob([xml], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `serbia_invoice_${invoiceId}.xml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert(`❌ Download failed: ${err.message}`);
+      }
+    }
+    
+    async function previewSerbiaInvoice(invoiceId) {
+      try {
+        document.getElementById('serbiaPreviewContent').innerHTML = '<p style="text-align:center;">⏳ Loading preview...</p>';
+        document.getElementById('serbiaPreviewModal').style.display = 'block';
+        
+        const res = await fetch(`/api/serbia/preview/${invoiceId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        
+        document.getElementById('serbiaPreviewContent').innerHTML = `
+          <div style="background:#334155; padding:20px; border-radius:12px; margin-bottom:20px;">
+            <h3 style="margin-top:0; color:#e2e8f0;">Invoice Details</h3>
+            <p><b>ID:</b> ${data.header?.invoice_no || 'N/A'}</p>
+            <p><b>Supplier:</b> ${data.header?.supplier || 'N/A'}</p>
+            <p><b>Date:</b> ${data.header?.invoice_date || 'N/A'}</p>
+            <p><b>Total:</b> ${data.validation?.total_calc || 'N/A'} ${data.header?.currency || 'RSD'}</p>
+          </div>
+          <div style="background:#334155; padding:20px; border-radius:12px;">
+            <h3 style="margin-top:0; color:#e2e8f0;">Items (${data.items?.length || 0})</h3>
+            <table style="width:100%; border-collapse:collapse; color:#e2e8f0;">
+              <thead>
+                <tr style="border-bottom:1px solid #475569;">
+                  <th style="padding:8px; text-align:left;">Code</th>
+                  <th style="padding:8px; text-align:left;">Name</th>
+                  <th style="padding:8px; text-align:right;">Qty</th>
+                  <th style="padding:8px; text-align:right;">Price</th>
+                  <th style="padding:8px; text-align:right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(data.items || []).map(item => `
+                  <tr style="border-bottom:1px solid #374151;">
+                    <td style="padding:8px;">${item.sifra || ''}</td>
+                    <td style="padding:8px;">${item.naziv || ''}</td>
+                    <td style="padding:8px; text-align:right;">${item.qty || 0}</td>
+                    <td style="padding:8px; text-align:right;">${item.unit_cost || 0}</td>
+                    <td style="padding:8px; text-align:right;">${item.line_total || 0}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } catch (err) {
+        document.getElementById('serbiaPreviewContent').innerHTML = `<p style="color:#f87171; text-align:center;">Error: ${err.message}</p>`;
+      }
+    }
+    
+    function closeSerbiaPreview() {
+      document.getElementById('serbiaPreviewModal').style.display = 'none';
+    }
+    
+    async function executeSerbiaInvoice(invoiceId) {
+      if (!confirm(`⚠️ Import Serbia invoice "${invoiceId}" to ERP database?\n\nThis will create:\n- kalkopste (header)\n- kalkstavke (items)\n- kalkkasa (payment terms)\n\nProceed?`)) {
+        return;
+      }
+      
+      try {
+        const res = await fetch(`/api/serbia/execute/${invoiceId}`, { method: 'POST' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        alert(`✅ Invoice ${invoiceId} imported successfully!\n\n${JSON.stringify(data, null, 2)}`);
+        loadSerbiaInvoices(); // Reload list
+      } catch (err) {
+        alert(`❌ Execute failed: ${err.message}`);
+      }
+    }
+    
+    // Initialize views when activated
+    const navItems = document.querySelectorAll('#nav .item');
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const view = item.dataset.view;
+        if (view === 'faktura') {
+          // Load pending invoices immediately
+          loadPendingFaktura();
+        } else if (view === 'serbia') {
+          // Load Serbia invoices immediately
+          loadSerbiaInvoices();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

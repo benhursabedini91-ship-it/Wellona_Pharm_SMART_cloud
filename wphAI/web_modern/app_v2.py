@@ -1,0 +1,187 @@
+import os
+from flask import Flask, jsonify, request, send_from_directory
+from dotenv import load_dotenv
+from db import fetch_all
+
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+
+app = Flask(__name__)
+
+@app.get("/health")
+def health():
+    return jsonify({
+        "status": "OK",
+        "db_host": os.getenv("WPH_DB_HOST","127.0.0.1"),
+        "db_name": os.getenv("WPH_DB_NAME","wph_ai"),
+        "app_port": int(os.getenv("APP_PORT","8055"))
+    })
+
+@app.get("/")
+def home():
+    return jsonify({
+        "routes": [
+            "/health",
+            "/api/orders",
+            "/api/orders/phoenix",
+            "/ui"
+        ]
+    })
+
+def get_sales_mv(sales_window: int) -> str:
+    """
+    Return the appropriate sales MV based on the sales_window parameter:
+      - 7  -> ops._sales_7d
+      - 30 -> ops._sales_30d
+      - 180 -> ops._sales_180d
+    Default to 30d if out of range.
+    """
+    if sales_window <= 10:
+        return "ops._sales_7d"
+    elif sales_window <= 60:
+        return "ops._sales_30d"
+    else:
+        return "ops._sales_180d"
+
+@app.get("/api/orders")
+def api_orders():
+    # Target days (1..100), default 28
+    try:
+        target_days = float(request.args.get("target_days", 28))
+    except Exception:
+        target_days = 28.0
+    target_days = max(1.0, min(100.0, target_days))
+
+    # Sales window (7/30/180), default 30
+    try:
+        sales_window = int(request.args.get("sales_window", 60))
+    except Exception:
+        sales_window = 30
+    
+    # Pick MV based on sales_window
+    sales_mv = get_sales_mv(sales_window)
+
+    # Search query (optional)
+    q = request.args.get("q", "").strip().lower()
+    q_filter = ""
+    params = [target_days]
+    if q:
+        q_filter = "AND (LOWER(ar.naziv) LIKE %s OR LOWER(c.sifra) LIKE %s OR LOWER(ar.barkod) LIKE %s)"
+        params.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
+
+    # Use the selected MV for demand
+    rows = fetch_all(
+        f"""
+        WITH demand AS (
+          SELECT s.sifra,
+                 COALESCE(s.avg_daily,0) AS avg_daily,
+                 s.last_sale_date,
+                 (CURRENT_DATE - s.last_sale_date) <= 90 AS has_recent_sales,
+                 COALESCE(s.avg_daily*30,0) AS monthly_units
+          FROM {sales_mv} s
+        ),
+        inventory AS (
+          SELECT sifra, qty AS stock FROM stg.stock_on_hand
+        ),
+        calc AS (
+          SELECT COALESCE(d.sifra, i.sifra) AS sifra,
+                 COALESCE(i.stock,0) AS current_stock,
+                 COALESCE(d.avg_daily,0) AS avg_daily_sales,
+                 COALESCE(d.monthly_units,0) AS monthly_units,
+                 COALESCE(d.has_recent_sales,FALSE) AS has_recent_sales,
+                 (
+                   SELECT p.min_zaliha
+                   FROM ref.min_zaliha_policy_v2 p
+                   WHERE COALESCE(d.avg_daily,0)*30 >= p.range_from
+                     AND (p.range_to IS NULL OR COALESCE(d.avg_daily,0)*30 <= p.range_to)
+                   ORDER BY p.range_from DESC
+                   LIMIT 1
+                 ) AS min_zaliha
+          FROM demand d
+          FULL OUTER JOIN inventory i ON d.sifra = i.sifra
+        )
+        SELECT c.sifra,
+               ar.naziv AS emri,
+               ar.barkod,
+               c.current_stock AS current_stock,
+               c.avg_daily_sales AS avg_daily_sales,
+               ROUND((c.current_stock / NULLIF(c.avg_daily_sales,0))::numeric,1) AS days_cover,
+               c.min_zaliha AS min_zaliha,
+               CEIL( GREATEST(0, GREATEST( COALESCE(c.min_zaliha, 0), CEIL(%s * c.avg_daily_sales) ) - c.current_stock ) ) AS qty_to_order
+        FROM calc c
+        JOIN eb_fdw.artikli ar ON c.sifra = ar.sifra
+        WHERE 1=1 {q_filter}
+        ORDER BY qty_to_order DESC, days_cover ASC NULLS FIRST
+        """,
+        params
+    )
+    return jsonify(rows)
+
+@app.get("/api/orders/phoenix")
+def api_phoenix():
+    try:
+        target_days = float(request.args.get("target_days", 28))
+    except Exception:
+        target_days = 28.0
+    target_days = max(1.0, min(100.0, target_days))
+
+    try:
+        sales_window = int(request.args.get("sales_window", 60))
+    except Exception:
+        sales_window = 30
+    
+    sales_mv = get_sales_mv(sales_window)
+
+    rows = fetch_all(
+        f"""
+        WITH demand AS (
+          SELECT s.sifra, COALESCE(s.avg_daily,0) AS avg_daily, s.last_sale_date,
+                 (CURRENT_DATE - s.last_sale_date) <= 90 AS has_recent_sales,
+                 COALESCE(s.avg_daily*30,0) AS monthly_units
+          FROM {sales_mv} s
+        ),
+        inventory AS (SELECT sifra, qty AS stock FROM stg.stock_on_hand),
+        calc AS (
+          SELECT COALESCE(d.sifra, i.sifra) AS sifra,
+                 COALESCE(i.stock,0) AS current_stock,
+                 COALESCE(d.avg_daily,0) AS avg_daily_sales,
+                 COALESCE(d.has_recent_sales,FALSE) AS has_recent_sales,
+                 (
+                   SELECT p.min_zaliha FROM ref.min_zaliha_policy_v2 p
+                   WHERE COALESCE(d.avg_daily,0)*30 >= p.range_from
+                     AND (p.range_to IS NULL OR COALESCE(d.avg_daily,0)*30 <= p.range_to)
+                   ORDER BY p.range_from DESC LIMIT 1
+                 ) AS min_zaliha
+          FROM demand d FULL OUTER JOIN inventory i ON d.sifra = i.sifra
+        )
+        SELECT ar.barkod,
+               CASE 
+                 WHEN NOT c.has_recent_sales THEN 
+                   CASE WHEN c.current_stock=0 AND c.avg_daily_sales>0 THEN 2 ELSE 0 END
+                 ELSE GREATEST(0, GREATEST(COALESCE(c.min_zaliha,0), CEIL(%s * c.avg_daily_sales)) - c.current_stock)
+               END AS qty
+        FROM calc c
+        JOIN eb_fdw.artikli ar ON c.sifra = ar.sifra
+        WHERE ar.barkod IS NOT NULL AND ar.barkod <> ''''
+        ORDER BY qty DESC
+        """,
+        [target_days]
+    )
+    csv_lines = ["barkod,qty"]
+    for r in rows:
+        qty = int(r.get("qty") or 0)
+        if qty > 0:
+            csv_lines.append(f"{r.get('barkod')},{qty}")
+    return "\n".join(csv_lines), 200, {"Content-Type": "text/csv; charset=utf-8"}
+
+
+@app.get("/smart")
+def smart_ui():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), "public"), "orders_smart.html")
+
+@app.get("/ui")
+def ui():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), "public"), "orders_ai.html")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.getenv("APP_PORT","8055")), debug=True)
+

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wellona Pharm SMART</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex bg-gradient-to-br from-neutral-50 to-white">
+  <aside class="w-[250px] border-r px-3 py-4 bg-white">
+    <div class="px-2 mb-3">
+      <div class="text-xl font-bold">Wellona Pharm <span class="text-indigo-600">SMART</span></div>
+      <div class="text-xs text-neutral-500">Konsola unifikuar</div>
+    </div>
+    <div id="sidebar-nav" class="space-y-1"></div>
+  </aside>
+  <main class="flex-1 px-5 py-5" id="main-content"></main>
+  <script>
+const MODULES = [
+  { id: 'orders', label: 'Porosi AI', icon: '🧠' },
+  { id: 'invoices', label: 'Faktura AI', icon: '📄' },
+  { id: 'bank', label: 'Banka AI', icon: '🏦' },
+  { id: 'analyst', label: 'Analyst', icon: '📊' },
+  { id: 'loyalty', label: 'Loyalty', icon: '🎟️' },
+  { id: 'admin', label: 'Admin', icon: '⚙️' }
+];
+
+let activeTab = localStorage.getItem('smart_active_tab') || 'orders';
+let appState = {
+  targetDays: Number(localStorage.getItem('ob_target_days')) || 6,
+  salesWindow: Number(localStorage.getItem('ob_sales_window')) || 60,
+  rows: [],
+  loading: false
+};
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = MODULES.map(m => {
+    const active = m.id === activeTab;
+    const cls = active ? 'bg-indigo-600 text-white' : 'hover:bg-neutral-100';
+    return `<button onclick="switchTab('${m.id}')" class="w-full text-left px-3 py-2 rounded-xl ${cls}">
+      <span>${m.icon}</span> ${m.label}
+    </button>`;
+  }).join('');
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  localStorage.setItem('smart_active_tab', tab);
+  document.addEventListener('DOMContentLoaded', () => { renderSidebar(); renderMain(); });
+}
+
+function renderMain() {
+  const content = document.getElementById('main-content');
+  if (activeTab === 'orders') {
+    loadOrders();
+  } else {
+    content.innerHTML = `<div class="p-6 bg-white rounded-2xl"><h2 class="text-xl font-semibold">Module: ${activeTab}</h2><p class="mt-2 text-sm text-neutral-500">UI gati</p></div>`;
+  }
+}
+
+async function loadOrders() {
+  try {
+    appState.loading = true;
+    const res = await fetch(`/api/orders?target_days=${appState.targetDays}&sales_window=${appState.salesWindow}`);
+    appState.rows = await res.json();
+    renderOrdersTable();
+  } catch(e) {
+    document.getElementById('main-content').innerHTML = `<div class="p-6 text-red-600">Gabim: ${e.message}</div>`;
+  } finally {
+    appState.loading = false;
+  }
+}
+
+function renderOrdersTable() {
+  const content = document.getElementById('main-content');
+  const krit = appState.rows.filter(r => r.qty_to_order > 0 && r.current_stock < 1).length;
+  const urgj = appState.rows.filter(r => r.qty_to_order > 0).length;
+  
+  content.innerHTML = `
+    <div class="space-y-4">
+      <div class="grid grid-cols-4 gap-3">
+        <div class="p-5 bg-white rounded-2xl shadow-sm">
+          <div class="text-xs text-neutral-500">🔥 Kritik</div>
+          <div class="text-3xl font-semibold">${krit}</div>
+        </div>
+        <div class="p-5 bg-white rounded-2xl shadow-sm">
+          <div class="text-xs text-neutral-500">⏳ Urgjent</div>
+          <div class="text-3xl font-semibold">${urgj}</div>
+        </div>
+        <div class="p-5 bg-white rounded-2xl shadow-sm">
+          <div class="text-xs text-neutral-500">📦 Total</div>
+          <div class="text-3xl font-semibold">${appState.rows.length}</div>
+        </div>
+        <div class="p-5 bg-white rounded-2xl shadow-sm">
+          <div class="text-xs text-neutral-500">✅ OK</div>
+          <div class="text-3xl font-semibold">${appState.rows.length - urgj}</div>
+        </div>
+      </div>
+      
+      <div class="flex gap-2">
+        <select id="targetDays" class="px-3 py-2 rounded-xl bg-neutral-100">
+          ${[3,6,7,10,14,21,28].map(n => `<option value="${n}" ${n===appState.targetDays?'selected':''}>${n} ditë</option>`).join('')}
+        </select>
+        <select id="salesWindow" class="px-3 py-2 rounded-xl bg-neutral-100">
+          ${[15,30,60].map(n => `<option value="${n}" ${n===appState.salesWindow?'selected':''}>${n} ditë</option>`).join('')}
+        </select>
+        <button onclick="loadOrders()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Rifresko</button>
+        <button onclick="placeOrder('phoenix')" class="px-4 py-2 rounded-xl bg-emerald-600 text-white">Phoenix</button>
+      </div>
+      
+      <div class="bg-white rounded-2xl p-3 max-h-[60vh] overflow-auto">
+        <table class="min-w-full text-sm">
+          <thead class="sticky top-0 bg-neutral-50">
+            <tr class="text-left">
+              <th class="px-4 py-3">KODI</th>
+              <th class="px-4 py-3">EMRI</th>
+              <th class="px-4 py-3">STOK</th>
+              <th class="px-4 py-3">DALJE</th>
+              <th class="px-4 py-3">POROSI</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${appState.rows.map((r, i) => `
+              <tr class="${i%2===0?'bg-white':'bg-neutral-50'}">
+                <td class="px-4 py-2 font-mono text-xs">${r.sifra}</td>
+                <td class="px-4 py-2">${r.emri}</td>
+                <td class="px-4 py-2">${Number(r.current_stock||0).toFixed(1)}</td>
+                <td class="px-4 py-2">${Number(r.avg_daily_sales||0).toFixed(2)}</td>
+                <td class="px-4 py-2 font-semibold">${Number(r.qty_to_order||0).toFixed(0)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('targetDays').addEventListener('change', e => {
+    appState.targetDays = Number(e.target.value);
+    localStorage.setItem('ob_target_days', appState.targetDays);
+    loadOrders();
+  });
+  
+  document.getElementById('salesWindow').addEventListener('change', e => {
+    appState.salesWindow = Number(e.target.value);
+    localStorage.setItem('ob_sales_window', appState.salesWindow);
+    loadOrders();
+  });
+}
+
+async function placeOrder(supplier) {
+  const payload = {
+    items: appState.rows.filter(r => r.qty_to_order > 0).map(r => ({
+      sifra: r.sifra,
+      barkod: r.barkod,
+      qty: r.qty_to_order
+    })),
+    meta: { target_days: appState.targetDays, sales_window: appState.salesWindow }
+  };
+  
+  try {
+    await fetch(`/api/orders/${supplier}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    alert(`✅ ${supplier} order u gjenerua!`);
+  } catch(e) {
+    alert(`❌ Gabim: ${e.message}`);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => { renderSidebar(); renderMain(); });
+
+</script>
+</body>
+</html>

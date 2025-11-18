@@ -1,0 +1,104 @@
+import os
+from flask import Flask, jsonify, request, send_from_directory
+from dotenv import load_dotenv
+from db import fetch_all
+
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+
+app = Flask(__name__)
+
+@app.get("/health")
+def health():
+    return jsonify({
+        "status": "OK",
+        "db_host": os.getenv("WPH_DB_HOST","127.0.0.1"),
+        "db_name": os.getenv("WPH_DB_NAME","wph_ai"),
+        "app_port": int(os.getenv("APP_PORT","8055"))
+    })
+
+@app.get("/")
+def home():
+    return jsonify({
+        "routes": [
+            "/health",
+            "/api/orders",
+            "/api/orders/phoenix",
+            "/ui"
+        ]
+    })
+
+@app.get("/api/orders")
+def api_orders():
+    # Target days dynamic (1..100), default 6
+    try:
+        target_days = float(request.args.get("target_days", 6))
+    except Exception:
+        target_days = 6.0
+    target_days = max(1.0, min(100.0, target_days))
+
+    rows = fetch_all(
+        """
+        WITH data AS (
+            SELECT 
+                a.sifra,
+                ar.naziv,
+                a.current_stock,
+                a.avg_daily_sales,
+                ROUND((a.current_stock / NULLIF(a.avg_daily_sales, 0))::numeric, 1) as days_cover,
+                a.min_zaliha,
+                a.has_recent_sales,
+                CASE 
+                  WHEN NOT a.has_recent_sales THEN 
+                    CASE WHEN a.current_stock = 0 AND a.avg_daily_sales > 0 THEN 2 ELSE 0 END
+                  ELSE GREATEST(0, GREATEST(a.min_zaliha, CEIL(%s * a.avg_daily_sales)) - a.current_stock)
+                END AS qty_to_order
+            FROM ops.article_status a
+            JOIN eb_fdw.artikli ar ON a.sifra = ar.sifra
+        )
+        SELECT sifra, naziv, current_stock, avg_daily_sales, days_cover, min_zaliha, qty_to_order
+        FROM data
+        WHERE qty_to_order > 0
+        ORDER BY days_cover ASC NULLS FIRST
+        """,
+        [target_days]
+    )
+    return jsonify(rows)
+
+@app.get("/api/orders/phoenix")
+def api_phoenix():
+    try:
+        target_days = float(request.args.get("target_days", 6))
+    except Exception:
+        target_days = 6.0
+    target_days = max(1.0, min(100.0, target_days))
+
+    rows = fetch_all(
+        """
+        WITH data AS (
+            SELECT 
+                ar.barkod,
+                CASE 
+                  WHEN NOT a.has_recent_sales THEN 
+                    CASE WHEN a.current_stock = 0 AND a.avg_daily_sales > 0 THEN 2 ELSE 0 END
+                  ELSE GREATEST(0, GREATEST(a.min_zaliha, CEIL(%s * a.avg_daily_sales)) - a.current_stock)
+                END AS qty_to_order
+            FROM ops.article_status a
+            JOIN eb_fdw.artikli ar ON a.sifra = ar.sifra
+            WHERE ar.barkod IS NOT NULL AND ar.barkod <> ''
+        )
+        SELECT barkod, qty_to_order FROM data WHERE qty_to_order > 0 ORDER BY qty_to_order DESC
+        """,
+        [target_days]
+    )
+    csv_lines = ["barkod,qty_to_order"]
+    for r in rows:
+        qty = int(r.get('qty_to_order') or 0)
+        csv_lines.append(f"{r['barkod']},{qty}")
+    return "\n".join(csv_lines), 200, {"Content-Type": "text/csv; charset=utf-8"}
+
+@app.get("/ui")
+def ui():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), "public"), "orders_ai.html")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.getenv("APP_PORT","8055")), debug=True)
