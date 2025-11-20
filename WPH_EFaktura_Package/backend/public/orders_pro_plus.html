@@ -141,6 +141,7 @@
         <div class="item" data-view="faktura" title="Faktura AI"><div class="ic">📄</div><div class="label">Faktura AI</div></div>
         <!-- eFaktura removed from sidebar. Keep code for reference in case we re-enable later. -->
         <!-- <div class="item" data-view="serbia" title="Serbia eFaktura"><div class="ic">🌍</div><div class="label">eFaktura</div></div> -->
+        <div class="item" data-view="fiskal" title="Fiskal Bills"><div class="ic">🧾</div><div class="label">Fiskal</div></div>
         <div class="item" data-view="banka" title="Banka AI"><div class="ic">🏛️</div><div class="label">Banka AI</div></div>
         <div class="item" data-view="analyst" title="Analyst"><div class="ic">📊</div><div class="label">Analyst</div></div>
         <div class="item" data-view="loyalty" title="Loyalty"><div class="ic">🎟️</div><div class="label">Loyalty</div></div>
@@ -156,6 +157,7 @@
         <div class="right">
           <div class="chip" id="env">Local</div>
           <div class="chip"><a href="/api/health/db" target="_blank" style="color:#fff; text-decoration:none">Health DB</a></div>
+          <div class="chip" id="intSummaryChip" title="Open Integrations" style="cursor:pointer;">Integrations: —</div>
         </div>
       </div>
 
@@ -451,7 +453,106 @@
         <div class="view" id="view-banka"><div class="p-wrap"><div class="card"><h2>Banka AI</h2><p>Modul placeholder.</p></div></div></div>
         <div class="view" id="view-analyst"><div class="p-wrap"><div class="card"><h2>Analyst</h2><p>Modul placeholder.</p></div></div></div>
         <div class="view" id="view-loyalty"><div class="p-wrap"><div class="card"><h2>Loyalty</h2><p>Modul placeholder.</p></div></div></div>
-        <div class="view" id="view-admin"><div class="p-wrap"><div class="card"><h2>Admin</h2><p>Modul placeholder.</p></div></div></div>
+        <div class="view" id="view-admin">
+          <div class="p-wrap">
+            <div class="card" style="background:#0f172a;">
+              <h2 style="margin-top:0; display:flex; align-items:center; gap:8px;">⚙️ Admin • Integrations</h2>
+              <div style="margin:6px 0 2px; display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="ghost" id="btnIntAll">Re-check All</button>
+              </div>
+              <div style="display:grid; gap:16px; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); margin-top:12px;">
+                <!-- EFaktura (Serbia Gov) -->
+                <div style="background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:14px;">
+                  <h3 style="margin:0 0 8px 0; font-size:15px;">🧾 eFaktura Purchases</h3>
+                  <div id="int-efaktura-status" class="muted">Probing…</div>
+                  <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                    <button class="ghost" id="btnIntEfakturaTest">Test List</button>
+                    <button class="primary" id="btnIntEfakturaPull">Fetch From Gov</button>
+                  </div>
+                </div>
+                
+                <!-- Pending Faktura Queue -->
+                <div style="background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:14px;">
+                  <h3 style="margin:0 0 8px 0; font-size:15px;">📥 Pending Faktura Queue</h3>
+                  <div id="int-pending-status" class="muted">Checking…</div>
+                  <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                    <button class="ghost" id="btnIntOpenFaktura">Open Faktura</button>
+                    <button class="ghost" id="btnIntRefreshPending">Refresh</button>
+                  </div>
+                </div>
+                
+                <!-- Orders/Suppliers API -->
+                <div style="background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:14px;">
+                  <h3 style="margin:0 0 8px 0; font-size:15px;">🏷️ Suppliers / Orders API</h3>
+                  <div id="int-suppliers-status" class="muted">Checking…</div>
+                  <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                    <button class="ghost" id="btnIntSuppliers">Re-check</button>
+                  </div>
+                </div>
+                
+                <!-- Fiskal Service -->
+                <div style="background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:14px;">
+                  <h3 style="margin:0 0 8px 0; font-size:15px;">🧾 Fiskal Service</h3>
+                  <div id="int-fiskal-status" class="muted">Probing…</div>
+                  <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                    <button class="ghost" id="btnIntOpenFiskal">Open Fiskal</button>
+                    <button class="ghost" id="btnIntFiskalProbe">Re-check</button>
+                  </div>
+                </div>
+                
+                <!-- Database Health -->
+                <div style="background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:14px;">
+                  <h3 style="margin:0 0 8px 0; font-size:15px;">🗄️ Database</h3>
+                  <div id="int-db-status" class="muted">Checking…</div>
+                  <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                    <a class="ghost" href="/api/health/db" target="_blank" style="text-decoration:none; display:inline-block; padding:9px 12px; border:1px solid var(--border); border-radius:10px; background:var(--chip); color:var(--fg);">Open Health</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Fiskal (Fiscal Bills) Module -->
+        <div class="view" id="view-fiskal">
+          <div class="p-wrap">
+            <div class="card" style="background:#0f172a;">
+              <h2 style="margin-top:0; display:flex; align-items:center; gap:8px;">🧾 Fiskal Bills <span id="fiskalGuardBadge" style="font-size:11px; padding:4px 8px; border-radius:999px; background:#1e293b; color:#94a3b8;">Guard...</span></h2>
+              <div style="display:grid; gap:16px; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); margin-top:12px;">
+                <!-- Fetch by Date -->
+                <div style="background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:14px;">
+                  <h3 style="margin:0 0 8px 0; font-size:15px;">📅 Fetch by Date</h3>
+                  <input type="date" id="fiskalDate" style="width:100%; margin-bottom:8px;" />
+                  <button class="primary" style="width:100%;" onclick="fiskalFetchByDate()">Fetch</button>
+                  <div id="fiskalDateResult" style="margin-top:8px; font-size:12px; color:#94a3b8;"></div>
+                </div>
+                <!-- Fetch by Number -->
+                <div style="background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:14px;">
+                  <h3 style="margin:0 0 8px 0; font-size:15px;">🔢 Fetch by Number</h3>
+                  <input type="text" id="fiskalNumber" placeholder="AB12-3456-7890" style="width:100%; margin-bottom:8px;" />
+                  <button class="primary" style="width:100%;" onclick="fiskalFetchByNumber()">Load Bill</button>
+                  <div id="fiskalNumberResult" style="margin-top:8px; font-size:12px; color:#94a3b8;"></div>
+                </div>
+                <!-- Alarm Status -->
+                <div style="background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:14px;">
+                  <h3 style="margin:0 0 8px 0; font-size:15px;">⚠️ Alarm Status</h3>
+                  <button class="ghost" style="width:100%;" onclick="fiskalCheckAlarm()">Check Alarm</button>
+                  <div id="fiskalAlarmResult" style="margin-top:8px; font-size:12px;"></div>
+                </div>
+                <!-- Parse Lines -->
+                <div style="background:#0b1220; border:1px solid #1f2937; border-radius:12px; padding:14px;">
+                  <h3 style="margin:0 0 8px 0; font-size:15px;">📊 Parse Lines</h3>
+                  <button class="ghost" style="width:100%;" onclick="fiskalParseLines()">Parse FB_*.json</button>
+                  <div id="fiskalParseResult" style="margin-top:8px; font-size:12px; color:#94a3b8;"></div>
+                </div>
+              </div>
+              <div style="margin-top:20px;">
+                <h3 style="margin:0 0 8px 0; font-size:15px;">📁 Staged Files</h3>
+                <button class="ghost" onclick="fiskalListFiles()">Refresh List</button>
+                <div id="fiskalFiles" style="margin-top:10px; max-height:280px; overflow-y:auto; font-size:12px; background:#0b1220; border:1px solid #1f2937; border-radius:8px; padding:8px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -472,13 +573,13 @@
 
     // Routing
     const KEY_LAST = "smart.last.view";
-    const routes = ["porosi","faktura","serbia","banka","analyst","loyalty","admin"];
+    const routes = ["porosi","faktura","serbia","banka","analyst","loyalty","admin","fiskal"];
     function setActive(view){
       document.querySelectorAll("#nav .item").forEach(n=>n.classList.toggle("active", n.dataset.view===view));
       document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
       (document.getElementById("view-"+view)||document.getElementById("view-porosi")).classList.add("active");
       document.getElementById("ttl").textContent =
-        {porosi:"Porosi AI", faktura:"Faktura AI", serbia:"eFaktura", banka:"Banka AI", analyst:"Analyst", loyalty:"Loyalty", admin:"Admin"}[view] || "SMART";
+        {porosi:"Porosi AI", faktura:"Faktura AI", serbia:"eFaktura", banka:"Banka AI", analyst:"Analyst", loyalty:"Loyalty", admin:"Admin", fiskal:"Fiskal Bills"}[view] || "SMART";
       localStorage.setItem(KEY_LAST, view);
     }
     document.getElementById("nav").addEventListener("click", (e)=>{
@@ -1149,6 +1250,8 @@
       console.error("Failed to initialize:", err);
       fetchOrders(); // Continue even if suppliers fail
     });
+    // Background probe to populate Integrations chip without opening Admin
+    setTimeout(()=>{ try { if (typeof adminRefreshIntegrations === 'function') adminRefreshIntegrations(); } catch(_) {} }, 400);
     
     // ============ FAKTURA AI FUNCTIONS ============
     function fakturaUpload() {
@@ -1644,9 +1747,192 @@
         } else if (view === 'serbia') {
           // Load Serbia invoices immediately
           loadSerbiaInvoices();
+        } else if (view === 'fiskal') {
+          // Initialize fiskal dashboard
+          fiskalInit();
+        } else if (view === 'admin') {
+          // Initialize integrations dashboard
+          adminInit();
         }
       });
     });
+
+    // ================== ADMIN • INTEGRATIONS ==================
+    function adminSet(el, html, color){ if(!el) return; el.innerHTML = html; if(color) el.style.color = color; }
+    function adminSetSummaryChip(){
+      const chip = document.getElementById('intSummaryChip'); if(!chip) return;
+      const st = (window.adminLastProbe)||{};
+      const vals = [st.efakturaOk, st.pendingOk, st.suppliersOk, st.fiskalOk, st.dbOk];
+      const total = vals.length;
+      const oks = vals.filter(v=>v===true).length;
+      const errs = vals.filter(v=>v===false).length;
+      let label = '—', bg = 'rgba(255,255,255,.15)', border = 'rgba(255,255,255,.25)';
+      if (errs>0) { label = 'Error'; bg = '#3f1d1d'; border = '#7f1d1d'; }
+      else if (oks>0 && oks<total) { label = 'Degraded'; bg = '#3b2f1d'; border = '#9a6b1f'; }
+      else if (oks===total) { label = 'OK'; bg = '#0b2f24'; border = '#14532d'; }
+      chip.textContent = 'Integrations: ' + label;
+      chip.style.background = bg; chip.style.borderColor = border;
+    }
+    function adminFetchJson(url, options = {}, timeoutMs = 8000){
+      return new Promise((resolve, reject) => {
+        const t = setTimeout(()=>reject(new Error('Timeout')), timeoutMs);
+        fetch(url, options).then(async r=>{ clearTimeout(t); try{ const j = await r.json(); resolve({ok:r.ok, status:r.status, json:j}); }catch(_){ resolve({ok:r.ok, status:r.status, json:null}); } }).catch(e=>{ clearTimeout(t); reject(e); });
+      });
+    }
+    async function adminRefreshIntegrations(){
+      // EFaktura purchases probe
+      const efEl = document.getElementById('int-efaktura-status');
+      adminSet(efEl,'Probing…','#94a3b8');
+      try {
+        const r = await adminFetchJson('/api/serbia/purchase-invoices');
+        if (r.ok) { adminSet(efEl, `✅ OK (HTTP ${r.status})`, '#10b981'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {efakturaOk:true}); }
+        else { adminSet(efEl, `❌ HTTP ${r.status}`, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {efakturaOk:false}); }
+      } catch(e){ adminSet(efEl, '❌ '+e.message, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {efakturaOk:false}); }
+
+      // Pending queue
+      const pqEl = document.getElementById('int-pending-status');
+      adminSet(pqEl,'Checking…','#94a3b8');
+      try {
+        const r = await adminFetchJson('/api/faktura/pending');
+        const n = Array.isArray(r.json) ? r.json.length : (r.json?.count ?? '—');
+        if (r.ok) { adminSet(pqEl, `📥 Pending: ${n}`, '#e5e7eb'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {pendingOk:true}); }
+        else { adminSet(pqEl, `❌ HTTP ${r.status}`, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {pendingOk:false}); }
+      } catch(e){ adminSet(pqEl, '❌ '+e.message, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {pendingOk:false}); }
+
+      // Suppliers API
+      const supEl = document.getElementById('int-suppliers-status');
+      adminSet(supEl,'Checking…','#94a3b8');
+      try {
+        const r = await adminFetchJson('/api/suppliers');
+        const n = Array.isArray(r.json) ? r.json.length : (r.json?.suppliers?.length ?? '—');
+        if (r.ok) { adminSet(supEl, `✅ Suppliers: ${n}`, '#10b981'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {suppliersOk:true}); }
+        else { adminSet(supEl, `❌ HTTP ${r.status}`, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {suppliersOk:false}); }
+      } catch(e){ adminSet(supEl, '❌ '+e.message, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {suppliersOk:false}); }
+
+      // Fiskal service
+      const fkEl = document.getElementById('int-fiskal-status');
+      adminSet(fkEl,'Probing…','#94a3b8');
+      try {
+        const r = await adminFetchJson((window.FISKAL_BASE||'http://localhost:5556') + '/api/guard-status');
+        if (r.ok) {
+          const st = r.json?.status || 'OK';
+          adminSet(fkEl, `✅ ${st}`, '#10b981'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {fiskalOk:true});
+        } else {
+          adminSet(fkEl, `❌ HTTP ${r.status}`, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {fiskalOk:false});
+        }
+      } catch(e){ adminSet(fkEl, '❌ '+e.message, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {fiskalOk:false}); }
+
+      // DB Health
+      const dbEl = document.getElementById('int-db-status');
+      adminSet(dbEl,'Checking…','#94a3b8');
+      try {
+        const r = await adminFetchJson('/api/health/db');
+        if (r.ok) { adminSet(dbEl, `✅ ${r.json?.status||'OK'}`, '#10b981'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {dbOk:true}); }
+        else { adminSet(dbEl, `❌ HTTP ${r.status}`, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {dbOk:false}); }
+      } catch(e){ adminSet(dbEl, '❌ '+e.message, '#f87171'); window.adminLastProbe = Object.assign(window.adminLastProbe||{}, {dbOk:false}); }
+
+      adminSetSummaryChip();
+    }
+    function adminBindIntegrationButtons(){
+      const byId = (id)=>document.getElementById(id);
+      const safe = (el, fn)=>{ if(el) el.addEventListener('click', fn); };
+      safe(byId('btnIntEfakturaTest'), async ()=>{
+        try { const r = await adminFetchJson('/api/serbia/purchase-invoices'); if(!r.ok) throw new Error('HTTP '+r.status); showToast('eFaktura list OK','success'); adminRefreshIntegrations(); } catch(e){ showToast('eFaktura list ERR: '+e.message,'error'); }
+      });
+      safe(byId('btnIntEfakturaPull'), async ()=>{
+        try { const r = await adminFetchJson('/api/serbia/fetch-efaktura',{method:'POST'}); if(!r.ok) throw new Error('HTTP '+r.status); showToast('Fetch from Gov triggered','success'); adminRefreshIntegrations(); } catch(e){ showToast('Fetch failed: '+e.message,'error'); }
+      });
+      safe(byId('btnIntOpenFaktura'), ()=>{ setActive('faktura'); });
+      safe(byId('btnIntRefreshPending'), async ()=>{ await adminRefreshIntegrations(); });
+      safe(byId('btnIntSuppliers'), async ()=>{ await adminRefreshIntegrations(); });
+      safe(byId('btnIntOpenFiskal'), ()=>{ setActive('fiskal'); });
+      safe(byId('btnIntFiskalProbe'), async ()=>{ await adminRefreshIntegrations(); });
+      safe(byId('btnIntAll'), async ()=>{ await adminRefreshIntegrations(); });
+    }
+    function adminInit(){ adminBindIntegrationButtons(); adminRefreshIntegrations(); }
+    // Make summary chip open Admin and refresh
+    (function(){ const chip=document.getElementById('intSummaryChip'); if(chip){ chip.addEventListener('click', ()=>{ setActive('admin'); adminInit(); }); } })();
+
+    // ================== FISKAL MODULE (calls separate fiscal_web service) ==================
+    const FISKAL_BASE = window.FISKAL_BASE || 'http://localhost:5556'; // Change if service hosted elsewhere
+
+    async function fiskalInit(){
+      // Set default date
+      const dEl = document.getElementById('fiskalDate');
+      if (dEl && !dEl.value) dEl.valueAsDate = new Date();
+      fiskalGuardStatus();
+      fiskalListFiles();
+    }
+    function fiskalSet(el, html, cls){ if(!el)return; el.innerHTML = html; el.style.color = cls || '#94a3b8'; }
+    async function fiskalFetchByDate(){
+      const date = document.getElementById('fiskalDate').value;
+      const out = document.getElementById('fiskalDateResult');
+      fiskalSet(out,'Loading...','#94a3b8');
+      try{
+        const r = await fetch(FISKAL_BASE+'/api/fetch-by-date',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date})});
+        const j = await r.json();
+        if(!r.ok||j.error) throw new Error(j.error||'Error');
+        fiskalSet(out,`✅ ${j.count} bills. Saved: ${j.saved}`,'#10b981');
+        fiskalListFiles();
+      }catch(e){ fiskalSet(out,'❌ '+e.message,'#f87171'); }
+    }
+    async function fiskalFetchByNumber(){
+      const num = document.getElementById('fiskalNumber').value.trim();
+      const out = document.getElementById('fiskalNumberResult');
+      if(!num){ fiskalSet(out,'Shkruaj numrin.','#f87171'); return; }
+      fiskalSet(out,'Loading...','#94a3b8');
+      try{
+        const r = await fetch(FISKAL_BASE+'/api/fetch-by-number',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({number:num})});
+        const j = await r.json();
+        if(!r.ok||j.error) throw new Error(j.error||'Error');
+        fiskalSet(out,`✅ Total: ${j.total||'N/A'} Date: ${j.issueDate||'--'}`,'#10b981');
+        fiskalListFiles();
+      }catch(e){ fiskalSet(out,'❌ '+e.message,'#f87171'); }
+    }
+    async function fiskalCheckAlarm(){
+      const out = document.getElementById('fiskalAlarmResult');
+      fiskalSet(out,'Loading...','#94a3b8');
+      try{
+        const r = await fetch(FISKAL_BASE+'/api/check-alarm');
+        const j = await r.json();
+        if(!r.ok||j.error) throw new Error(j.error||'Error');
+        let html = '';
+        if(j.alarm_active) html += `<div style="color:#f87171;font-weight:600">🚨 ${j.consecutive_zeros} ditë pa fatura!</div>`;
+        else html += `<div style="color:#10b981;font-weight:600">✅ OK (${j.consecutive_zeros} ditë zero rradhazi)</div>`;
+        html += '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">'+j.history.map(h=>`<span style="background:#1e293b;padding:4px 6px;border-radius:6px">${h.date}:${h.count}</span>`).join('')+'</div>';
+        fiskalSet(out,html,'#94a3b8');
+      }catch(e){ fiskalSet(out,'❌ '+e.message,'#f87171'); }
+    }
+    async function fiskalGuardStatus(){
+      const badge = document.getElementById('fiskalGuardBadge');
+      try{
+        const r = await fetch(FISKAL_BASE+'/api/guard-status');
+        const j = await r.json();
+        if(!r.ok||j.error) throw new Error(j.error||'Error');
+        badge.textContent = j.status;
+        badge.style.background = j.allow_db_write ? (j.require_confirm ? '#f59e0b' : '#14532d') : '#1e293b';
+        badge.style.color = j.allow_db_write ? (j.require_confirm ? '#000' : '#10b981') : '#94a3b8';
+      }catch(e){ badge.textContent = 'Guard ERR'; badge.style.background='#7f1d1d'; badge.style.color='#fca5a5'; }
+    }
+    async function fiskalListFiles(){
+      const box = document.getElementById('fiskalFiles'); if(!box) return; box.textContent='Loading...';
+      try{
+        const r = await fetch(FISKAL_BASE+'/api/list-files');
+        const j = await r.json();
+        if(!r.ok||j.error) throw new Error(j.error||'Error');
+        if(!j.count){ box.innerHTML='<div style="color:#94a3b8">S’ka files.</div>'; return; }
+        box.innerHTML = j.files.map(f=>`<div style=\"display:flex;justify-content:space-between;border-bottom:1px solid #1f2937;padding:4px 2px;\"><span>${f.name}</span><span style=\"color:#64748b\">${(f.size/1024).toFixed(1)} KB</span></div>`).join('');
+      }catch(e){ box.textContent='❌ '+e.message; box.style.color='#f87171'; }
+    }
+    async function fiskalParseLines(){
+      const out = document.getElementById('fiskalParseResult'); fiskalSet(out,'Parsing...','#94a3b8');
+      try{
+        const r = await fetch(FISKAL_BASE+'/api/parse-lines',{method:'POST'});
+        const j = await r.json();
+        if(!r.ok||j.error||!j.success) throw new Error(j.error||'Parse failed');
+        fiskalSet(out,'✅ CSV: '+(j.csv_path||'OK'),'#10b981');
+      }catch(e){ fiskalSet(out,'❌ '+e.message,'#f87171'); }
+    }
   </script>
 </body>
 </html>
