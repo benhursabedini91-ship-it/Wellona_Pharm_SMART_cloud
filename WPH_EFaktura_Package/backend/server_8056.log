@@ -1,0 +1,219 @@
+ * Serving Flask app 'app_v2'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8056
+ * Running on http://192.168.100.185:8056
+Press CTRL+C to quit
+127.0.0.1 - - [18/Nov/2025 12:42:14] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:42:16] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [18/Nov/2025 12:42:34] "GET /ui HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:42:34] "GET /static/img/wellona-logo.svg HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:42:34] "GET /static/img/wellona-full-logo.svg HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:42:35] "GET /api/suppliers HTTP/1.1" 200 -
+[2025-11-18 12:42:36,250] ERROR in app: Exception on /api/orders/v2 [GET]
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\app_v2.py", line 289, in api_orders_v2
+    rows = fetch_all(sql, params)
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\db.py", line 18, in fetch_all
+    cur.execute(sql, params or {})
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "ops.orders_30d_snapshot" does not exist
+LINE 8:         FROM ops.orders_30d_snapshot
+                     ^
+
+127.0.0.1 - - [18/Nov/2025 12:42:36] "GET /api/orders/v2?sales_window=30&target_days=28&include_zero=0&product_scope=sales&q= HTTP/1.1" 500 -
+Error on request:
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\app_v2.py", line 289, in api_orders_v2
+    rows = fetch_all(sql, params)
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\db.py", line 18, in fetch_all
+    cur.execute(sql, params or {})
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "ops.orders_30d_snapshot" does not exist
+LINE 8:         FROM ops.orders_30d_snapshot
+                     ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\werkzeug\serving.py", line 370, in run_wsgi
+    execute(self.server.app)
+    ~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\werkzeug\serving.py", line 331, in execute
+    application_iter = app(environ, start_response)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 862, in handle_exception
+    return self.finalize_request(server_error, from_error_handler=True)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 939, in finalize_request
+    response = self.make_response(rv)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1212, in make_response
+    raise TypeError(
+    ^
+TypeError: The view function for 'api_orders_v2' did not return a valid response. The function either returned None or ended without a return statement.
+127.0.0.1 - - [18/Nov/2025 12:42:44] "GET /api/faktura/pending HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:42:47] "GET /api/faktura/pending HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:42:48] "GET /api/faktura/pending HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:42:53] "POST /api/faktura/efaktura-pull HTTP/1.1" 500 -
+127.0.0.1 - - [18/Nov/2025 12:43:05] "GET /ui HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:43:06] "GET /static/img/wellona-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [18/Nov/2025 12:43:06] "GET /static/img/wellona-full-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [18/Nov/2025 12:43:06] "GET /api/suppliers HTTP/1.1" 200 -
+[2025-11-18 12:43:07,135] ERROR in app: Exception on /api/orders/v2 [GET]
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\app_v2.py", line 289, in api_orders_v2
+    rows = fetch_all(sql, params)
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\db.py", line 18, in fetch_all
+    cur.execute(sql, params or {})
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "ops.orders_30d_snapshot" does not exist
+LINE 8:         FROM ops.orders_30d_snapshot
+                     ^
+
+127.0.0.1 - - [18/Nov/2025 12:43:07] "GET /api/orders/v2?sales_window=30&target_days=28&include_zero=0&product_scope=sales&q= HTTP/1.1" 500 -
+Error on request:
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\app_v2.py", line 289, in api_orders_v2
+    rows = fetch_all(sql, params)
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\db.py", line 18, in fetch_all
+    cur.execute(sql, params or {})
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "ops.orders_30d_snapshot" does not exist
+LINE 8:         FROM ops.orders_30d_snapshot
+                     ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\werkzeug\serving.py", line 370, in run_wsgi
+    execute(self.server.app)
+    ~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\werkzeug\serving.py", line 331, in execute
+    application_iter = app(environ, start_response)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 862, in handle_exception
+    return self.finalize_request(server_error, from_error_handler=True)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 939, in finalize_request
+    response = self.make_response(rv)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1212, in make_response
+    raise TypeError(
+    ^
+TypeError: The view function for 'api_orders_v2' did not return a valid response. The function either returned None or ended without a return statement.
+127.0.0.1 - - [18/Nov/2025 12:43:14] "GET /ui HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:43:14] "GET /static/img/wellona-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [18/Nov/2025 12:43:14] "GET /static/img/wellona-full-logo.svg HTTP/1.1" 304 -
+127.0.0.1 - - [18/Nov/2025 12:43:15] "GET /api/suppliers HTTP/1.1" 200 -
+[2025-11-18 12:43:15,541] ERROR in app: Exception on /api/orders/v2 [GET]
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\app_v2.py", line 289, in api_orders_v2
+    rows = fetch_all(sql, params)
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\db.py", line 18, in fetch_all
+    cur.execute(sql, params or {})
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "ops.orders_30d_snapshot" does not exist
+LINE 8:         FROM ops.orders_30d_snapshot
+                     ^
+
+127.0.0.1 - - [18/Nov/2025 12:43:15] "GET /api/orders/v2?sales_window=30&target_days=28&include_zero=0&product_scope=sales&q= HTTP/1.1" 500 -
+Error on request:
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\app_v2.py", line 289, in api_orders_v2
+    rows = fetch_all(sql, params)
+  File "C:\Wellona\Wellona_Pharm_SMART\WPH_EFaktura_Package\backend\db.py", line 18, in fetch_all
+    cur.execute(sql, params or {})
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "ops.orders_30d_snapshot" does not exist
+LINE 8:         FROM ops.orders_30d_snapshot
+                     ^
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\werkzeug\serving.py", line 370, in run_wsgi
+    execute(self.server.app)
+    ~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\werkzeug\serving.py", line 331, in execute
+    application_iter = app(environ, start_response)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 862, in handle_exception
+    return self.finalize_request(server_error, from_error_handler=True)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 939, in finalize_request
+    response = self.make_response(rv)
+  File "C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1212, in make_response
+    raise TypeError(
+    ^
+TypeError: The view function for 'api_orders_v2' did not return a valid response. The function either returned None or ended without a return statement.
+127.0.0.1 - - [18/Nov/2025 12:43:39] "GET /ui/pro HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2025 12:44:23] "GET /static/img/wellona-logo.svg HTTP/1.1" 200 -

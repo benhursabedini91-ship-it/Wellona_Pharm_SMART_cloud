@@ -1,4 +1,4 @@
-import os
+SSH direkt nga PowerShell (më trego nëse ke lidhur)import os
 import urllib.parse
 import sys
 import csv
@@ -40,9 +40,19 @@ except ImportError as e:
     SOPHARMA_ERP_AVAILABLE = False
     print(f"Warning: Faktura AI modules not available: {e}")
 
+# Monitoring integration
+try:
+    from monitoring import monitor, send_telegram_alert
+    MONITORING_AVAILABLE = True
+except ImportError as e:
+    MONITORING_AVAILABLE = False
+    print(f"Warning: Monitoring module not available: {e}")
+
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
 app = Flask(__name__)
+# Public UI directory (serves orders_pro_plus.html)
+UI_PUBLIC_PATH = os.path.join(os.path.dirname(__file__), 'public')
 
 # Simple in-memory cache for /api/orders (TTL: 5 minutes)
 _orders_cache = {}
@@ -125,6 +135,22 @@ def sanitize_items(items):
     
     return rows, total
 
+
+def _safe_fetch_all(sql, params=None, default=None):
+    """Helper to execute fetch_all safely in backend app.
+    Returns default when USE_DB not enabled; otherwise attempts fetch_all and raises on error.
+    """
+    if not USE_DB:
+        app.logger.debug("DB disabled (WPH_APP_USE_DB=0) - returning default for fetch_all")
+        return default if default is not None else []
+    try:
+        if params is None:
+            return fetch_all(sql)
+        return fetch_all(sql, params)
+    except Exception as e:
+        app.logger.exception("DB query failed: %s", e)
+        raise
+
 # ============ Routes ============
 
 @app.get("/health")
@@ -177,13 +203,13 @@ def clear_cache():
 def api_suppliers():
     """Get list of active suppliers"""
     try:
-        rows = fetch_all("SELECT supplier_id, code, name FROM ref.suppliers WHERE is_active = true ORDER BY name")
+        rows = _safe_fetch_all("SELECT supplier_id, code, name FROM ref.suppliers WHERE is_active = true ORDER BY name", None, default=[])
         return jsonify(rows)
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
-        print(f"[SERBIA API ERROR] {str(e)}\n{tb}")
-        return jsonify({"error": str(e), "traceback": tb}), 500
+        app.logger.exception("Failed to fetch suppliers")
+        return jsonify({"error": "Database unavailable or query failed", "message": str(e), "traceback": tb}), 503
 
 @app.get("/")
 def home():
@@ -286,7 +312,13 @@ def api_orders_v2():
     # Order by priority (alarm first, then flow, then qty)
     sql += " ORDER BY alarm_active DESC, flow_status DESC, qty_to_order DESC"
     
-    rows = fetch_all(sql, params)
+    try:
+        rows = _safe_fetch_all(sql, params, default=[])
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        app.logger.exception("api_orders_v2 DB query failed")
+        return jsonify({"error": "Database error: unable to fetch orders", "message": str(e), "traceback": tb}), 503
     
     # Format decimals
     for row in rows:
@@ -368,11 +400,40 @@ def api_orders():
     # supplier_param = suppliers if suppliers else None
     supplier_param = None  # Force ERP mode: auto-select cheapest supplier
     
-    # Call DB function (safe from SQL injection) - use 6-param version with date range
-    rows = fetch_all(
-        "SELECT * FROM wph_core.get_orders(%s, %s, %s, %s, %s, %s)",
-        [target_days, date_from, date_to, include_zero, search_query, supplier_param]
-    )
+    # Call DB function. Prefer 6-param signature (target_days,date_from,date_to,include_zero,search_query,suppliers)
+    # but gracefully fallback to 5-param legacy (target_days,sales_window,include_zero,search_query,suppliers)
+    rows = []
+    legacy_error = None
+    try:
+        rows = _safe_fetch_all(
+            "SELECT * FROM wph_core.get_orders(%s, %s, %s, %s, %s, %s)",
+            [target_days, date_from, date_to, include_zero, search_query, supplier_param],
+            default=[]
+        )
+    except Exception as e6:
+        legacy_error = e6  # store for diagnostics if fallback also fails
+        app.logger.warning("6-param get_orders failed, attempting 5-param fallback: %s", e6)
+        try:
+            # Fallback: interpret target_days as p_target_days and sales_window from target_days or default 30
+            fallback_sales_window = target_days if target_days in (7,15,30,60,180) else 30
+            rows = _safe_fetch_all(
+                "SELECT * FROM wph_core.get_orders(%s, %s, %s, %s, %s)",
+                [target_days, fallback_sales_window, include_zero, search_query, supplier_param],
+                default=[]
+            )
+        except Exception as e5:
+            import traceback
+            tb = traceback.format_exc()
+            app.logger.exception("api_orders legacy DB query failed (both signatures)")
+            return jsonify({
+                "error": "Database error: unable to fetch orders (legacy)",
+                "message": str(e5),
+                "traceback": tb,
+                "attempted_signatures": {
+                    "6_param_error": str(legacy_error),
+                    "5_param_error": str(e5)
+                }
+            }), 503
     
     # 🔧 FIX: Format decimal numbers to avoid 80.000000000000000 display
     for row in rows:
@@ -488,7 +549,7 @@ def _xlsx_response(rows):
 def health_db():
     """Database health check endpoint"""
     try:
-        rows = fetch_all("SELECT 1 AS ok")
+        rows = _safe_fetch_all("SELECT 1 AS ok", None, default=None)
         if rows and rows[0].get("ok") == 1:
             return jsonify({
                 "status": "healthy",
@@ -502,12 +563,16 @@ def health_db():
                 "timestamp": datetime.datetime.now().isoformat()
             }), 500
     except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        app.logger.exception("Database health check failed")
         return jsonify({
             "status": "unhealthy",
             "database": "connection failed",
             "error": str(e),
+            "traceback": tb,
             "timestamp": datetime.datetime.now().isoformat()
-        }), 500
+        }), 503
 
 
 @app.post("/api/orders/<supplier>")
@@ -553,10 +618,17 @@ def post_order_supplier(supplier):
         suppliers = filters.get("supplier", [])
         
         # Get orders from DB - always use 5-param version
-        rows_db = fetch_all(
-            "SELECT * FROM wph_core.get_orders(%s, %s, %s, %s, %s)",
-            [target_days, sales_window, include_zero, search_query, suppliers if suppliers else None]
-        )
+        try:
+            rows_db = _safe_fetch_all(
+                "SELECT * FROM wph_core.get_orders(%s, %s, %s, %s, %s)",
+                [target_days, sales_window, include_zero, search_query, suppliers if suppliers else None],
+                default=[]
+            )
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            app.logger.exception("post_order_supplier DB fetch failed")
+            return jsonify({"error":"Database error while fetching orders for UI payload", "message": str(e), "traceback": tb}), 503
         
         # Apply edits to quantities
         items_raw = []
@@ -690,41 +762,44 @@ def api_phoenix():
     
     sales_mv = get_sales_mv(sales_window)
 
-    rows = fetch_all(
-        f"""
-        WITH demand AS (
-          SELECT s.sifra, COALESCE(s.avg_daily,0) AS avg_daily, s.last_sale_date,
-                 (CURRENT_DATE - s.last_sale_date) <= 90 AS has_recent_sales,
-                 COALESCE(s.avg_daily*30,0) AS monthly_units
-          FROM {sales_mv} s
-        ),
-        inventory AS (SELECT sifra, qty AS stock FROM stg.stock_on_hand),
-        calc AS (
-          SELECT COALESCE(d.sifra, i.sifra) AS sifra,
-                 COALESCE(i.stock,0) AS current_stock,
-                 COALESCE(d.avg_daily,0) AS avg_daily_sales,
-                 COALESCE(d.has_recent_sales,FALSE) AS has_recent_sales,
-                 (
-                   SELECT p.min_zaliha FROM ref.min_zaliha_policy_v2 p
-                   WHERE COALESCE(d.avg_daily,0)*30 >= p.range_from
-                     AND (p.range_to IS NULL OR COALESCE(d.avg_daily,0)*30 <= p.range_to)
-                   ORDER BY p.range_from DESC LIMIT 1
-                 ) AS min_zaliha
-          FROM demand d FULL OUTER JOIN inventory i ON d.sifra = i.sifra
-        )
-        SELECT ar.barkod,
-               CASE 
-                 WHEN NOT c.has_recent_sales THEN 
-                   CASE WHEN c.current_stock=0 AND c.avg_daily_sales>0 THEN 2 ELSE 0 END
-                 ELSE GREATEST(0, GREATEST(COALESCE(c.min_zaliha,0), CEIL(%s * c.avg_daily_sales)) - c.current_stock)
-               END AS qty
-        FROM calc c
-        JOIN eb_fdw.artikli ar ON c.sifra = ar.sifra
-        WHERE ar.barkod IS NOT NULL AND ar.barkod <> ''''
-        ORDER BY qty DESC
-        """,
-        [target_days]
-    )
+    try:
+        rows = _safe_fetch_all(f"""
+                WITH demand AS (
+                    SELECT s.sifra, COALESCE(s.avg_daily,0) AS avg_daily, s.last_sale_date,
+                                 (CURRENT_DATE - s.last_sale_date) <= 90 AS has_recent_sales,
+                                 COALESCE(s.avg_daily*30,0) AS monthly_units
+                    FROM {sales_mv} s
+                ),
+                inventory AS (SELECT sifra, qty AS stock FROM stg.stock_on_hand),
+                calc AS (
+                    SELECT COALESCE(d.sifra, i.sifra) AS sifra,
+                                 COALESCE(i.stock,0) AS current_stock,
+                                 COALESCE(d.avg_daily,0) AS avg_daily_sales,
+                                 COALESCE(d.has_recent_sales,FALSE) AS has_recent_sales,
+                                 (
+                                     SELECT p.min_zaliha FROM ref.min_zaliha_policy_v2 p
+                                     WHERE COALESCE(d.avg_daily,0)*30 >= p.range_from
+                                         AND (p.range_to IS NULL OR COALESCE(d.avg_daily,0)*30 <= p.range_to)
+                                     ORDER BY p.range_from DESC LIMIT 1
+                                 ) AS min_zaliha
+                    FROM demand d FULL OUTER JOIN inventory i ON d.sifra = i.sifra
+                )
+                SELECT ar.barkod,
+                             CASE 
+                                 WHEN NOT c.has_recent_sales THEN 
+                                     CASE WHEN c.current_stock=0 AND c.avg_daily_sales>0 THEN 2 ELSE 0 END
+                                 ELSE GREATEST(0, GREATEST(COALESCE(c.min_zaliha,0), CEIL(%s * c.avg_daily_sales)) - c.current_stock)
+                             END AS qty
+                FROM calc c
+                JOIN eb_fdw.artikli ar ON c.sifra = ar.sifra
+                WHERE ar.barkod IS NOT NULL AND ar.barkod <> ''''
+                ORDER BY qty DESC
+                """, [target_days], default=[])
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        app.logger.exception("api_phoenix DB query failed")
+        return jsonify({"error": "Database error: unable to compute phoenix orders", "message": str(e), "traceback": tb}), 503
     csv_lines = ["barkod,qty"]
     for r in rows:
         qty = int(r.get("qty") or 0)
@@ -754,14 +829,26 @@ def orders_download():
 
 @app.errorhandler(500)
 def handle_500(e):
-    # Graceful fallback when eb_inventory_current is missing: return empty list for /api/orders
+    # Graceful fallback: log and return a structured JSON error for API requests
+    import traceback
     try:
-        path = request.path
-        text = str(e)
+        tb = traceback.format_exc()
     except Exception:
-        path = ''
-        text = ''
-        return jsonify({ 'error': text or 'internal error' }), 500
+        tb = None
+
+    app.logger.exception("Unhandled 500 error: %s", e)
+    # If the request is for an API path, return JSON; otherwise return minimal text
+    try:
+        if request.path.startswith('/api'):
+            return jsonify({
+                'error': 'internal_server_error',
+                'message': str(e),
+                'traceback': tb
+            }), 500
+        else:
+            return Response("Internal server error", status=500, mimetype='text/plain')
+    except Exception:
+        return jsonify({'error': 'internal error'}), 500
 
 
 # ============ UI Routes ============
@@ -789,11 +876,65 @@ def api_health():
                 "/api/orders/v2",
                 "/api/faktura/upload",
                 "/api/faktura/list",
-                "/api/health/db"
+                "/api/health/db",
+                "/api/health/full"
             ]
         })
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route("/api/health/full", methods=["GET"])
+def api_health_full():
+    """
+    🏥 Comprehensive health check with system metrics
+    Includes: DB, CPU, Memory, Disk, Uptime
+    """
+    if not MONITORING_AVAILABLE:
+        return jsonify({
+            "status": "degraded",
+            "error": "Monitoring module not available - install psutil"
+        }), 503
+    
+    try:
+        health_data = monitor.get_full_health()
+        
+        # Check for critical issues
+        issues = monitor.check_critical_issues()
+        if issues:
+            health_data["issues"] = issues
+        
+        status_code = 200 if health_data["overall_status"] == "healthy" else 503
+        return jsonify(health_data), status_code
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+@app.route("/api/monitoring/alert", methods=["POST"])
+def api_monitoring_alert():
+    """
+    📢 Manually trigger a test alert (Telegram)
+    POST body: {"message": "Test alert", "severity": "warning"}
+    """
+    if not MONITORING_AVAILABLE:
+        return jsonify({"error": "Monitoring not available"}), 503
+    
+    try:
+        data = request.get_json() or {}
+        message = data.get("message", "Test alert from WPH Pharmacy")
+        severity = data.get("severity", "warning")
+        
+        success = send_telegram_alert(message, severity)
+        
+        return jsonify({
+            "success": success,
+            "message": "Alert sent successfully" if success else "Alert failed (check Telegram config)"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ============ FAKTURA AI ENDPOINTS ============
@@ -1675,4 +1816,5 @@ def api_serbia_execute(invoiceId):
 
 
 if __name__ == "__main__":
+    app.logger.info("Starting backend WPH AI app: UI_PUBLIC_PATH=%s, USE_DB=%s", UI_PUBLIC_PATH or 'None', USE_DB)
     app.run(host="0.0.0.0", port=int(os.getenv("APP_PORT","8055")), debug=False, use_reloader=False)
