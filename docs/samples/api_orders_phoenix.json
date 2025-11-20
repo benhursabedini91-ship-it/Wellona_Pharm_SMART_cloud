@@ -1,0 +1,57 @@
+[
+  {
+    "sifra": "99575549",
+    "emri": "CONTOUR PLUS TRAKE A50",
+    "barkod": "5016003764004",
+    "current_stock": 543,
+    "avg_daily_sales": 62.42857,
+    "days_cover": 8.7,
+    "min_zaliha": 1747,
+    "qty_to_order": 1746,
+    "supplier_name": "PHOENIX"
+  },
+  {
+    "sifra": "50006934",
+    "emri": "NUROFEN FORTE 400MG KAPSULE X20",
+    "barkod": "5000347012345",
+    "current_stock": 12,
+    "avg_daily_sales": 2.7,
+    "days_cover": 4.4,
+    "min_zaliha": 76,
+    "qty_to_order": 64,
+    "supplier_name": "PHOENIX"
+  },
+  {
+    "sifra": "90011378",
+    "emri": "MAGNESIUM CITRAT 400MG TBL X60",
+    "barkod": "4260123456789",
+    "current_stock": 95,
+    "avg_daily_sales": 2.1,
+    "days_cover": 45.2,
+    "min_zaliha": 59,
+    "qty_to_order": 0,
+    "supplier_name": "PHOENIX"
+  },
+  {
+    "sifra": "30014701",
+    "emri": "MUCOSOLVAN SIRUP 100ML",
+    "barkod": "4015600312345",
+    "current_stock": 8,
+    "avg_daily_sales": 0.9,
+    "days_cover": 8.9,
+    "min_zaliha": 25,
+    "qty_to_order": 17,
+    "supplier_name": "PHOENIX"
+  },
+  {
+    "sifra": "80020256",
+    "emri": "ECHINACEA KAPSULE X60",
+    "barkod": "7502206234567",
+    "current_stock": 88,
+    "avg_daily_sales": 1.4,
+    "days_cover": 62.9,
+    "min_zaliha": 39,
+    "qty_to_order": 0,
+    "supplier_name": "PHOENIX"
+  }
+]

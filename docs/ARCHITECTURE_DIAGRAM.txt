@@ -1,0 +1,154 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ARKITEKTURA E PLOTË E WPH_AI                             │
+│                 Data Flow: ERP → Postgres → Web API → CSV                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 1: ERP (SQL Server - EvidentaBaza)                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                            [Foreign Data Wrapper]
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 2: POSTGRES - eb_fdw schema (Read-Only Mirror)                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  eb_fdw.artikli          ← Master data (sifra, naziv, barkod, pakovanje)   │
+│  eb_fdw.kalkulacije      ← Transaction history (sales & purchases)         │
+│  eb_fdw.kasa_promet      ← POS transactions                                 │
+└──────────────────────┬──────────────────────────────────────────────────────┘
+                       │
+                       ├──────────────────────────────────────────┐
+                       │                                          │
+                       ▼                                          ▼
+┌────────────────────────────────────┐  ┌────────────────────────────────────┐
+│ LAYER 3A: STAGING (stg)            │  │ LAYER 3B: REFERENCE (ref)          │
+├────────────────────────────────────┤  ├────────────────────────────────────┤
+│ stg.stock_on_hand                  │  │ ref.min_zaliha_policy_v2           │
+│   ← eb_fdw.artikli.stanje          │  │   (Dynamic min stock rules)        │
+│                                    │  │                                    │
+│ stg.sales_raw                      │  │ ref.suppliers                      │
+│   ← eb_fdw.kalkulacije (snapshot)  │  │   (Phoenix, Sopharma, Vega)        │
+│                                    │  │                                    │
+│ stg.phoenix_latest                 │  │ ref.banned_words                   │
+│ stg.sopharma_latest                │  │   (igla, spric, maska)             │
+│ stg.vega_latest                    │  │                                    │
+│   (Vendor price feeds)             │  │ ref.drug_aliases                   │
+└──────────────┬─────────────────────┘  └────────────┬───────────────────────┘
+               │                                     │
+               │   [Nightly ETL: REFRESH MVs]        │
+               ▼                                     │
+┌─────────────────────────────────────────────────────┘
+│ LAYER 4: OPERATIONS (ops) - Materialized Views
+├────────────────────────────────────────────────────────────────────────────┐
+│ ops._sales_7d         ← Aggregated from stg.sales_raw (AVG daily 7d)      │
+│ ops._sales_15d        ← 15-day rolling average                            │
+│ ops._sales_30d        ← 30-day rolling average (default)                  │
+│ ops._sales_60d        ← 60-day rolling average                            │
+│ ops._sales_180d       ← 180-day rolling average                           │
+│                                                                            │
+│ ops.article_status    ← Real-time view combining all layers               │
+│   (sifra, naziv, stock, avg_daily, days_cover, qty_to_order)              │
+└──────────────────────┬─────────────────────────────────────────────────────┘
+                       │
+                       │  [Web API Queries]
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 5: WEB API (Flask - web_modern/app_v2.py)                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  GET /api/orders                                                            │
+│  ┌────────────────────────────────────────────────────────────────┐        │
+│  │ 1. Read: ops._sales_Xd (avg_daily)                             │        │
+│  │ 2. Read: stg.stock_on_hand (current_stock)                     │        │
+│  │ 3. Read: ref.min_zaliha_policy_v2 (min threshold)              │        │
+│  │ 4. Join: eb_fdw.artikli (naziv, barkod, pakovanje)             │        │
+│  │ 5. Calculate: qty_to_order = max(min_zaliha, target×avg) - stock│       │
+│  │ 6. Round: ceil(qty / pakovanje) × pakovanje                    │        │
+│  │ 7. Filter: include_zero, search_query                          │        │
+│  │ 8. Return: JSON array (sifra, emri, stock, qty_to_order, ...)  │        │
+│  └────────────────────────────────────────────────────────────────┘        │
+│                                                                             │
+│  POST /api/orders/<supplier>                                                │
+│  ┌────────────────────────────────────────────────────────────────┐        │
+│  │ 1. Validate: banned_words filter (ref.banned_words)            │        │
+│  │ 2. Round: ceil_to_pack(pakovanje)                              │        │
+│  │ 3. Budget cap: total ≤ DAILY_BUDGET_RSD                        │        │
+│  │ 4. Write: app.orders (header)                                  │        │
+│  │ 5. Write: app.order_items (line items)                         │        │
+│  │ 6. Export CSV: C:\Wellona\wphAI\out\orders\YYYY-MM-DD\*.csv    │        │
+│  │ 7. Return: {status, csv_path, order_id}                        │        │
+│  └────────────────────────────────────────────────────────────────┘        │
+│                                                                             │
+│  GET /api/orders/phoenix                                                    │
+│  ┌────────────────────────────────────────────────────────────────┐        │
+│  │ 1. Same logic as /api/orders                                   │        │
+│  │ 2. Format: barkod,qty (Phoenix-specific CSV)                   │        │
+│  │ 3. Return: text/csv                                             │        │
+│  └────────────────────────────────────────────────────────────────┘        │
+└──────────────────────┬──────────────────────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 6: APPLICATION DATA (app schema)                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  app.orders              ← Order headers (status, supplier, csv_path)      │
+│  app.order_items         ← Line items (sifra, qty, unit_cost)              │
+└──────────────────────┬──────────────────────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 7: AUDIT & LOGS (audit schema)                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  audit.etl_runs          ← Pipeline execution logs                         │
+│  audit.api_requests      ← HTTP request logs (optional)                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ OUTPUT: CSV FILES                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  C:\Wellona\wphAI\out\orders\2025-11-04\ORDER_PHOENIX_20251104_083215.csv  │
+│  Format: sifra;barkod;naziv;qty;unit_cost;line_total                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ USERS / CLIENTS                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  → Browser (http://127.0.0.1:8055/ui) - Ultra UI                           │
+│  → CLI (bin/wph_ai_orchestrator.py) - Automated ordering                   │
+│  → Excel (app/order_brain.py) - Legacy Excel processor                     │
+│  → PowerShell (app/etl_run.ps1) - Manual ETL trigger                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+KEY JOIN PATHS:
+═══════════════════════════════════════════════════════════════════════════════
+
+1. DEMAND PATH:
+   eb_fdw.kalkulacije.sifra → stg.sales_raw.sifra → ops._sales_Xd.sifra
+
+2. STOCK PATH:
+   eb_fdw.artikli.sifra → stg.stock_on_hand.sifra
+
+3. POLICY PATH:
+   ops._sales_Xd.monthly_units → ref.min_zaliha_policy_v2 (range match)
+
+4. METADATA PATH:
+   ops._sales_Xd.sifra → eb_fdw.artikli.sifra (naziv, barkod, pakovanje)
+
+5. ORDER EXPORT PATH:
+   app.orders.id → app.order_items.order_id → CSV file
+
+═══════════════════════════════════════════════════════════════════════════════
+REFRESH SCHEDULE (Cron):
+═══════════════════════════════════════════════════════════════════════════════
+
+Daily 02:00 AM:
+  1. REFRESH MATERIALIZED VIEW CONCURRENTLY ops._sales_7d;
+  2. REFRESH MATERIALIZED VIEW CONCURRENTLY ops._sales_15d;
+  3. REFRESH MATERIALIZED VIEW CONCURRENTLY ops._sales_30d;
+  4. REFRESH MATERIALIZED VIEW CONCURRENTLY ops._sales_60d;
+  5. REFRESH MATERIALIZED VIEW CONCURRENTLY ops._sales_180d;
+  6. DELETE FROM stg.sales_raw WHERE sale_date < CURRENT_DATE - 180;
+

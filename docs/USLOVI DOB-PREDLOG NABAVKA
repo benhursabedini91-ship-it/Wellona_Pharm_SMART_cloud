@@ -1,0 +1,204 @@
+ather sheff keshtu.. ne ERP tim easybusiness kam disa mundsi qe do ja sqaroj permes fotove dhe pershkrimit:
+
+foto 1-rruga derei te ksuhtet e furnitoreve
+foto 2-permbajtja e UPDATEVE QE BENEH VETEM NGA IMPORTI I CMIMIPRES SE FURNITOREVE?
+foto 3-percaktimi i kolonave 
+
+dmth kjo metod eshte e instaluar tek ERP i apotekes!
+
+USLOVI DOBAVLJAČA
+
+
+
+
+U meniju “Robno>Maloprodaja>Uslovi dobavljača” locirane su opcije koje olakšavaju odabir dobavljača artikala po najpovoljnijim uslovima. Preduslov za korišćenje ove opcije su sledeći koraci: 
+
+U formi „Uslovi dobavljača“ u kartici „Ažuriranje“ kreirajte fasciklu za smeštaj fajlova koji predstavljaju uslove dobavljača i njenu prečicu na radnoj površini (Desktop), pritiskom na dugme „Kreiraj“ u oblasti (pravougaonik koji okviruje veći broj kontrola) „Kreiranje prečice na radnu površinu“. U toj fascikli smestite sve fajlove (excel format) koji predstavljaju uslove dobavljača. Ukoliko ima potrebe promenite imena tih fajlova na ime dobaljača. Primer: Phoenix.xls, Farmalogist.xlsx, Vega.xls, NS Pharm.xlsx itd.
+
+U formi „Uslovi dobavljača“ u kartici „Dobavljači“ potrebno je podesiti za prikazane dobaljače podatke o rednim brojevima kolona karakterističnih podataka (barkod, VP cena, kasa, dodatna kasa i koeficijent koji množi podatak o kasi) iz fajlova koje dobijate od dobavljača. To su excel tabele u kojima će te ustanoviti na kojim pozicijama se nalaze gore pomenute kolone. Primer: ako se kolona u tabeli sa podacima o barkodu artikla nalazi (gledano s leva na desno) na trećem mestu onda upišite broj 3 za posmatranog dobavljača u polju „Barkod“. To ponovite i za ostala polja za sve dobavljače i sačuvajte podatke. „Koeficijent kase“ je numerički iznos kojim množite podatak o kasi iz fajla dobavljača da bi ste dobili cele brojeve. Na primer ako je podatak o kasi dat u procentima (5% se vidi kao 0.05) tada je neophodno da koeficijet bude 100 da bi ste dobili podatak o kasi u ispravnom obliku. Ako u fajlu sa uslovima dobavljača imate (gledano sleva na desno) prazne kolone, obrišite ih pre nego što numerište iste u opcijama programa. Takođe obrišite i redove iznad imena kolona, ako postoje. Ako u fajlu postoje više kartica (šitova) neophodno je karticu sa uslovima dobavljača postaviti kao prvu.
+
+U formi „Uslovi dobavljača“ u kartici „Ažuriranje“ iz padajuče liste dobavljača u oblasti „Ažuriranje“ izaberite redom dobavljače iz liste i kliknite na dugme „Ažuriranje“ za svakog ponaosob. Ako vam se tom prilikom pojavi forma za unos dodatnih uslova i ako vam dobavljač daje takve uslove unesite ih i pritisnite potvrdno dugme. Program će preuzeti podatke i obavestiće vas da li je taj postupak uspešno izveden ili ne.
+
+Nakon uspešnog sprovođenja prethodna 3 koraka spremni ste da koristite opciju pregleda uporednih uslova za kupovinu robe od dobavljača.
+
+U formi „Uslovi dobavljača“ u kartici „Pregled“ filtriranjem po dobavljaču i/ili artiklu korisnik dobija tabelarni pregled uslova za kupovinu izabranog/izabranih artikala.
+
+Ovu pogodnost korisnik može da koristi i prilikom rada u formi „Kasa“ pritiskom F7 na selektovani artikal iz tabele za izbor artikla. U formi „Robno>Artikli“ za selektovani artikal se dobijaju pritiskom na F7 isti podaci kao i u „Robno>Maloprodaja>Lager lista“ po istom principu.
+
+U formi „Robno>Izveštaji>Predlog nabavke“ takođe se mogu videti uslovi dobavljača za predložene artikle za nabavku.
+
+e keni ndonje pyetje dhe ae kuptoni se si funksionon procedura?
+
+
+
+
+E kuptova plotësisht, dhe po – procedura është shumë e qartë.
+Le ta përmbledh për ta sqaruar teknikisht, që të jemi në të njëjtën faqe për integrim me automatizimin që po zhvillojmë (Order Brain, Excel, ERP, etj).
+
+---
+
+### 🧩 1. Çfarë bën “Uslovi dobavljača”
+
+Ky modul në **EasyBusiness ERP** është një mekanizëm i brendshëm që e automatizon krahasimin e kushteve të furnitorëve – çmimet, rabatet, kushtet e pagesës – duke i importuar nga **Excel fajlet** e furnitorëve (p.sh. `Phoenix.xls`, `Vega.xlsx`, etj).
+Në thelb, është **një sistem semi-automatik i “price list ingestion”**.
+
+---
+
+### ⚙️ 2. Struktura e funksionimit
+
+**Hapi 1 – Definimi i kolonave për secilin furnitor**
+Në tabin “Dobavljači”, ti përcakton se cilat kolona në Excel përmbajnë:
+
+* Barkod
+* VP cena (çmimi me shumicë)
+* Kasa, Kasa+
+* Koeficient (p.sh. 100 për konvertimin e 0.05 në 5%)
+
+Ky konfigurim është praktikisht një **mapping manual i kolonave**, një formë bazë e “schema definition” për importim.
+
+**Hapi 2 – Ažurimi nga fajlat Excel**
+Në tabin “Ažuriranje”, zgjedh furnitorin dhe shtyp “Ažuriranje”.
+Sistemi lexon fajlin përkatës (me emrin e furnitorit), gjen kolonat sipas numrave që ke përcaktuar, dhe i fut në bazë të dhënash ERP – në tabelën e kushteve të furnitorëve.
+
+**Hapi 3 – Përdorimi në praktikë**
+Pasi të jetë bërë importi, këto të dhëna mund t’i përdorësh:
+
+* Në “Predlog nabavke” → për të krahasuar kushte në mënyrë automatike për artikujt që duhen porositur.
+* Në “Kasa” (me F7) → për të parë kush e ka artikullin më lirë në momentin e shitjes.
+* Në “Artikli / Lager lista” → për të parë kushte për furnitorët e zgjedhur.
+
+---
+
+### 🧠 3. Lidhja me automatizimin tonë (Order Brain)
+
+Kjo është **e njëjta logjikë** që ne po replikojmë në mënyrë të automatizuar me Python/ERP bot tonin:
+
+* EasyBusiness përdor metoda manuale të importimit të fajlave Excel të furnitorëve.
+* Order Brain i lexon automatikisht ato fajla, harmonizon kolonat (përmes mapping JSON ose .env) dhe krijon **output-in krahasues me çmimin më të mirë, rabatin dhe fitimin efektiv**.
+
+Në praktikë, mund të e lidhim kështu:
+
+* EasyBusiness krijon fajlat `.xls` në folderin që ke konfiguruar (fashikulli për “Uslovi dobavljača”).
+* Order Brain i lexon nga ai **i njëjti folder**.
+* Output-i i përpunuar (CSV me “artikull, furnitor, çmim neto”) mund të ngarkohet mbrapsht në EasyBusiness përmes “Pregled” ose “Predlog nabavke”.
+
+---
+
+### 🔍 4. Vlerësim teknik
+
+Ky sistem është shumë i vlefshëm për sinergji sepse:
+
+* Ka tashmë “mapping manual” të furnitorëve që mund ta eksportojmë.
+* Mund të përdoret si **input direkt për auto_order_core.py**.
+* Jep një pikë hyrjeje për **real-time synchronization**: çdo herë që bëhet “Ažuriranje”, mund të gjenerohet automatikisht edhe një CSV për Python.
+
+---
+
+Nëse do, mund të të përgatis një **skript të vogël** që lexon automatikisht fajlat nga folderi “Uslovi dobavljača” dhe gjeneron një **FURNITORET.xlsx** të standardizuar për Order Brain, duke përdorur konfigurimin që ke në EasyBusiness (mapping me numra kolonash).
+Do të funksionojë si “bridge layer” midis ERP-së ekzistuese dhe sistemit të ri inteligjent.
+
+A dëshiron ta bëjmë atë hap tani?
+
+
+PREDLOG NABAVKE
+
+Opciju u programu na lokaciji “Robno>Izveštaji>Predlog nabavke” možete da koristitite u cilju lakšeg trebovanja potrebnih dobara za potrebe vašeg poslovanja. Predlog nabavke vam omogućava da za izabrane parametre postavite kriterijume za dobijanje podataka koji su od značaja za vas:
+
+magacin - predstavlja izbog za koji magacin želite da radite predlog nabavke
+
+dobavljač - izbor dobara u predlogu nabavke koji su sažeti na izabranog dobavljača od koga su bar jednom kupovani
+
+proizvođač - izbor dobara u predlogu nabavke koji su sažeti na izabranog proizvođača dobara
+
+grupa artikla - izbor dobara u predlogu nabavke koji su sažeti na izabranu grupu dobara
+
+podgrupa artikla - izbor dobara u predlogu nabavke koji su sažeti na izabranu podgrupu dobara
+
+datum od i datum do - su datumi koji ograničavaju uzorkovani period za koji se vrši analiza prometa dobara i na osnovu koga se predlaže nabavka
+
+broj dana - predstavlja broj dana za koji je potrebno predložiti nabavku
+
+nabavka > - predstavlja minimalnu količinu na stanju od koje se predlog nabavke treba razmatrati
+
+isključi interna dokumenta - ova opcija isključuje interni promet između objekata prilikom razmatranja predloga nabavke
+
+
+
+
+U predlogu nabavke moguće je prikazati kolone sa uslovima koje dobavljači daju za predložene artikle. Da bi ste videli ove uslove neophodno je odraditi pripreme koje su opisane na strani „Uslovi dobavljača“ koja prethodi predlogu nabavke.
+
+shef ae dini ju qe tani un e mesova qe erp im e ka kete gjee te integruar??
+
+Po, e ke kapur në thelb — dhe është **shumë e rëndësishme** ajo që sapo the.
+ERP-i yt **EasyBusiness** e ka **integruar tashmë mekanizmin bazë të inteligjencës për furnizim**, vetëm që në formë **manuale dhe statike**.
+Le ta dekonstruktojmë saktë që ta shohësh si bërthamë të asaj që po ndërtomë me *Order Brain*:
+
+---
+
+### 💡 Çfarë ke zbuluar realisht
+
+Ti ke kuptuar që **EasyBusiness ka modul të integruar për analizë konsumi dhe propozim të porosisë (Predlog nabavke)** – dhe ai **lidhet direkt me modulën “Uslovi dobavljača”** që përmende më parë.
+Kjo do të thotë se ERP-i yt:
+
+* E di **sa është dalja (izlaz)** për secilin artikull në periudhë të caktuar.
+* E di **cilët furnitorë** kanë ofruar kushte për to (nga Excel-at që importon).
+* Dhe i kombinon këto të dhëna për të gjeneruar **propozim automatik të blerjes** për periudhën që ti zgjedh (p.sh. 7 ditë, 15 ditë, 30 ditë).
+
+---
+
+### 🧠 Pra, ERP-i yt tashmë:
+
+1. **Kalkulon mesataren e konsumit** (bazuar në “datum od – datum do”).
+2. **Llogarit stokun aktual**.
+3. **Propozon sasinë që duhet blerë** për numrin e ditëve që ti përcakton (p.sh. “broj dana = 10”).
+4. **Tregon kush e ka artikullin më lirë** (nga tabela “Uslovi dobavljača”).
+
+Në fakt, ky është **algoritmi i parahistorik i një Auto-Order Engine**.
+Ne po e çojmë në nivelin **Order Brain AI**, që e bën:
+
+* pa hapje dritaresh,
+* pa zgjedhje manuale,
+* dhe me raport final për çdo furnitor (CSV, Excel, ose direkt në portal).
+
+---
+
+### 🧩 Si lidhen këto dy sisteme
+
+Le ta vizualizojmë zinxhirin logjik të ERP-it tënd:
+
+```
+Promet artikla  →  Analiza izlaza  →  Predlog nabavke  
+                        ↓
+                 Uslovi dobavljača  
+                        ↓
+         Uporedni uslovi  →  Izbor najpovoljnijeg  
+```
+
+Dhe tani, me Order Brain, po e zëvendësojmë këtë rrjedhë me:
+
+```
+PROMET ARTIKLA.xlsx + FURNITORET.xlsx
+→ AI konsumi, rabati, koeficienti kase
+→ Përllogaritje e fitimit efektiv
+→ Gjenerim automatik i PO_ALL_SUPPLIERS.csv
+→ Portal submit (Phoenix, Vega, Sopharma…)
+```
+
+---
+
+### 🚀 Çfarë do të thotë praktikisht kjo për ty
+
+Ti **nuk ke më nevojë të rindërtosh logjikën nga zero** — vetëm ta **lexosh dhe ta zgjatsh** nga EasyBusiness.
+Do të mjaftojë që:
+
+* ne ta marrim folderin e “Uslovi dobavljača” që përdor ERP-i,
+* ta përdorim si **input** për sistemin tonë të automatizuar,
+* dhe t’i gjenerojmë urdhërat direkt nga Python/ERP në portalet e furnitorëve.
+
+Në fakt, kjo do të thotë që **ERP-i yt tashmë ka gjysmën e “Order Brain” brenda vetes**, vetëm që është “analoge”.
+Ne po i japim **trurin dixhital**.
+
+---
+
+Dua të të pyes vetëm një gjë për hapat e ardhshëm:
+A do që ta lidhim drejtpërdrejt EasyBusiness-in me Order Brain (për të lexuar automatikisht folderin “Uslovi dobavljača” dhe për ta konvertuar në “FURNITORET.xlsx”), apo e do si skript të ndarë që mund ta nisësh vetë kur të duash?

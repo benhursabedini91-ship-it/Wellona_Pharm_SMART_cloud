@@ -1,0 +1,222 @@
+[
+  {
+    "sifra": "99575549",
+    "emri": "CONTOUR PLUS TRAKE A50",
+    "barkod": "5016003764004",
+    "current_stock": 543,
+    "avg_daily_sales": 62.42857,
+    "days_cover": 8.7,
+    "min_zaliha": 1747,
+    "qty_to_order": 1746,
+    "supplier_name": "PHOENIX"
+  },
+  {
+    "sifra": "10002487",
+    "emri": "PARACETAMOL 500MG TBL X20",
+    "barkod": "8606001234567",
+    "current_stock": 120,
+    "avg_daily_sales": 4.2,
+    "days_cover": 28.6,
+    "min_zaliha": 118,
+    "qty_to_order": 0,
+    "supplier_name": "SOPHARMA"
+  },
+  {
+    "sifra": "20003598",
+    "emri": "ASPIRIN PROTECT 100MG TBL X30",
+    "barkod": "4015600512309",
+    "current_stock": 85,
+    "avg_daily_sales": 3.8,
+    "days_cover": 22.4,
+    "min_zaliha": 106,
+    "qty_to_order": 21,
+    "supplier_name": "VEGA"
+  },
+  {
+    "sifra": "30004712",
+    "emri": "BRUFEN 400MG TBL X30",
+    "barkod": "5391528456789",
+    "current_stock": 200,
+    "avg_daily_sales": 8.5,
+    "days_cover": 23.5,
+    "min_zaliha": 238,
+    "qty_to_order": 38,
+    "supplier_name": "FARMALOGIST"
+  },
+  {
+    "sifra": "40005823",
+    "emri": "VITAMIN C 1000MG TBL ŠUMEĆE X20",
+    "barkod": "3838989123456",
+    "current_stock": 45,
+    "avg_daily_sales": 1.2,
+    "days_cover": 37.5,
+    "min_zaliha": 34,
+    "qty_to_order": 0,
+    "supplier_name": "SOPHARMA"
+  },
+  {
+    "sifra": "50006934",
+    "emri": "NUROFEN FORTE 400MG KAPSULE X20",
+    "barkod": "5000347012345",
+    "current_stock": 12,
+    "avg_daily_sales": 2.7,
+    "days_cover": 4.4,
+    "min_zaliha": 76,
+    "qty_to_order": 64,
+    "supplier_name": "PHOENIX"
+  },
+  {
+    "sifra": "60008045",
+    "emri": "HEMOFARM ANDOL 500MG TBL X20",
+    "barkod": "8606002987654",
+    "current_stock": 300,
+    "avg_daily_sales": 15.3,
+    "days_cover": 19.6,
+    "min_zaliha": 428,
+    "qty_to_order": 128,
+    "supplier_name": "VEGA"
+  },
+  {
+    "sifra": "70009156",
+    "emri": "PROBIOTIC FLORA MAX KAPSULE X30",
+    "barkod": "3800123456789",
+    "current_stock": 0,
+    "avg_daily_sales": 0.8,
+    "days_cover": 0,
+    "min_zaliha": 22,
+    "qty_to_order": 22,
+    "supplier_name": "FARMALOGIST"
+  },
+  {
+    "sifra": "80010267",
+    "emri": "OMEGA 3 FORTE 1000MG KAPSULE X60",
+    "barkod": "7502205123456",
+    "current_stock": 180,
+    "avg_daily_sales": 5.4,
+    "days_cover": 33.3,
+    "min_zaliha": 151,
+    "qty_to_order": 0,
+    "supplier_name": "SOPHARMA"
+  },
+  {
+    "sifra": "90011378",
+    "emri": "MAGNESIUM CITRAT 400MG TBL X60",
+    "barkod": "4260123456789",
+    "current_stock": 95,
+    "avg_daily_sales": 2.1,
+    "days_cover": 45.2,
+    "min_zaliha": 59,
+    "qty_to_order": 0,
+    "supplier_name": "PHOENIX"
+  },
+  {
+    "sifra": "10012489",
+    "emri": "DIKLOFENAK GEL 50G",
+    "barkod": "8606003654321",
+    "current_stock": 22,
+    "avg_daily_sales": 1.5,
+    "days_cover": 14.7,
+    "min_zaliha": 42,
+    "qty_to_order": 20,
+    "supplier_name": "VEGA"
+  },
+  {
+    "sifra": "20013590",
+    "emri": "PANTOPRAZOL 40MG TBL X30",
+    "barkod": "8606004789012",
+    "current_stock": 60,
+    "avg_daily_sales": 2.3,
+    "days_cover": 26.1,
+    "min_zaliha": 64,
+    "qty_to_order": 4,
+    "supplier_name": "FARMALOGIST"
+  },
+  {
+    "sifra": "30014701",
+    "emri": "MUCOSOLVAN SIRUP 100ML",
+    "barkod": "4015600312345",
+    "current_stock": 8,
+    "avg_daily_sales": 0.9,
+    "days_cover": 8.9,
+    "min_zaliha": 25,
+    "qty_to_order": 17,
+    "supplier_name": "PHOENIX"
+  },
+  {
+    "sifra": "40015812",
+    "emri": "SUMAMED 500MG TBL X3",
+    "barkod": "3838910123456",
+    "current_stock": 45,
+    "avg_daily_sales": 1.8,
+    "days_cover": 25,
+    "min_zaliha": 50,
+    "qty_to_order": 5,
+    "supplier_name": "SOPHARMA"
+  },
+  {
+    "sifra": "50016923",
+    "emri": "VOLTAREN EMULGEL 100G",
+    "barkod": "5000348123456",
+    "current_stock": 75,
+    "avg_daily_sales": 3.2,
+    "days_cover": 23.4,
+    "min_zaliha": 90,
+    "qty_to_order": 15,
+    "supplier_name": "VEGA"
+  },
+  {
+    "sifra": "60018034",
+    "emri": "CALCIUM D3 TBL ŠUMEĆE X20",
+    "barkod": "3800234567890",
+    "current_stock": 150,
+    "avg_daily_sales": 4.7,
+    "days_cover": 31.9,
+    "min_zaliha": 132,
+    "qty_to_order": 0,
+    "supplier_name": "FARMALOGIST"
+  },
+  {
+    "sifra": "70019145",
+    "emri": "ZINC 25MG TBL X100",
+    "barkod": "4260234567890",
+    "current_stock": 0,
+    "avg_daily_sales": 0,
+    "days_cover": 0,
+    "min_zaliha": 0,
+    "qty_to_order": 0,
+    "supplier_name": "UNKNOWN"
+  },
+  {
+    "sifra": "80020256",
+    "emri": "ECHINACEA KAPSULE X60",
+    "barkod": "7502206234567",
+    "current_stock": 88,
+    "avg_daily_sales": 1.4,
+    "days_cover": 62.9,
+    "min_zaliha": 39,
+    "qty_to_order": 0,
+    "supplier_name": "PHOENIX"
+  },
+  {
+    "sifra": "90021367",
+    "emri": "LACTOBACILLUS RHAMNOSUS KAPSULE X30",
+    "barkod": "3838911345678",
+    "current_stock": 32,
+    "avg_daily_sales": 0.7,
+    "days_cover": 45.7,
+    "min_zaliha": 20,
+    "qty_to_order": 0,
+    "supplier_name": "SOPHARMA"
+  },
+  {
+    "sifra": "10022478",
+    "emri": "KETONAL DUO 150MG KAPSULE X20",
+    "barkod": "8606005890123",
+    "current_stock": 18,
+    "avg_daily_sales": 1.1,
+    "days_cover": 16.4,
+    "min_zaliha": 31,
+    "qty_to_order": 13,
+    "supplier_name": "VEGA"
+  }
+]

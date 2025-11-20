@@ -1,0 +1,75 @@
+{
+  "info": {
+    "name": "WPH AI Orders API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "c3e2b23a-6f8d-4f3a-9367-9c9b0ea1e0e1"
+  },
+  "item": [
+    {
+      "name": "GET Orders (filters)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/orders?sales_window={{sales_window}}&target_days={{target_days}}&include_zero={{include_zero}}&q={{q}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","orders"],
+          "query": [
+            {"key":"sales_window","value":"{{sales_window}}"},
+            {"key":"target_days","value":"{{target_days}}"},
+            {"key":"include_zero","value":"{{include_zero}}"},
+            {"key":"q","value":"{{q}}"},
+            {"key":"supplier","value":"PHOENIX","disabled":true},
+            {"key":"supplier","value":"VEGA","disabled":true}
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Download CSV",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/orders?sales_window={{sales_window}}&target_days={{target_days}}&include_zero={{include_zero}}&download=csv",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","orders"],
+          "query": [
+            {"key":"sales_window","value":"{{sales_window}}"},
+            {"key":"target_days","value":"{{target_days}}"},
+            {"key":"include_zero","value":"{{include_zero}}"},
+            {"key":"download","value":"csv"}
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Download XLSX",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/orders?sales_window={{sales_window}}&target_days={{target_days}}&include_zero={{include_zero}}&download=xlsx",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","orders"],
+          "query": [
+            {"key":"sales_window","value":"{{sales_window}}"},
+            {"key":"target_days","value":"{{target_days}}"},
+            {"key":"include_zero","value":"{{include_zero}}"},
+            {"key":"download","value":"xlsx"}
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {"key":"baseUrl", "value":"http://localhost:8055"},
+    {"key":"sales_window", "value":"30"},
+    {"key":"target_days", "value":"28"},
+    {"key":"include_zero", "value":"0"},
+    {"key":"q", "value":""}
+  ]
+}

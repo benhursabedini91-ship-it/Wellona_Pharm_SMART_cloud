@@ -1,0 +1,35 @@
+[
+  {
+    "sifra": "10002487",
+    "emri": "PARACETAMOL 500MG TBL X20",
+    "barkod": "8606001234567",
+    "current_stock": 120,
+    "avg_daily_sales": 4.2,
+    "days_cover": 28.6,
+    "min_zaliha": 118,
+    "qty_to_order": 0,
+    "supplier_name": "SOPHARMA"
+  },
+  {
+    "sifra": "99575",
+    "emri": "PARACETA",
+    "barkod": "5016003764004",
+    "current_stock": 150,
+    "avg_daily_sales": 5.8,
+    "days_cover": 25.9,
+    "min_zaliha": 162,
+    "qty_to_order": 12,
+    "supplier_name": "SOPHARMA"
+  },
+  {
+    "sifra": "30014",
+    "emri": "PARA 500MG",
+    "barkod": "4015600312345",
+    "current_stock": 88,
+    "avg_daily_sales": 3.9,
+    "days_cover": 22.6,
+    "min_zaliha": 109,
+    "qty_to_order": 21,
+    "supplier_name": "SOPHARMA"
+  }
+]

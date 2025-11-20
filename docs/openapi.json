@@ -1,0 +1,71 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "WPH AI Orders API",
+    "version": "1.0.0",
+    "description": "API për listimin e produkteve dhe kalkulimin e porosive sipas dritares së shitjeve dhe parametrave të filtrimit."
+  },
+  "servers": [
+    { "url": "http://localhost:8055", "description": "Lokale (dev)" }
+  ],
+  "paths": {
+    "/api/orders": {
+      "get": {
+        "summary": "Listo porositë (produkte + llogaritje)",
+        "description": "Kthen listën e artikujve me stokun aktual, mesataren ditore të shitjeve dhe sasinë për porositje sipas parametrave të dhënë.",
+        "parameters": [
+          {"name":"sales_window","in":"query","required":true,"schema":{"type":"integer","minimum":1,"maximum":365},"description":"Numri i ditëve për analizën e shitjeve (p.sh. 7/15/30/60/180). Në UI llogaritet nga data_from/data_to."},
+          {"name":"target_days","in":"query","required":true,"schema":{"type":"integer","default":28,"minimum":1,"maximum":365},"description":"Sa ditë stok synohet të mbahet (default 28)."},
+          {"name":"include_zero","in":"query","required":true,"schema":{"type":"string","enum":["0","1"],"default":"0"},"description":"1 = përfshi artikuj pa shitje; 0 = përjashto."},
+          {"name":"q","in":"query","required":false,"schema":{"type":"string"},"description":"Kërkim sipas sifra/barkod/emri."},
+          {"name":"supplier","in":"query","required":false,"schema":{"type":"array","items":{"type":"string","enum":["PHOENIX","VEGA","SOPHARMA","FARMALOGIST"]}},"style":"form","explode":true,"description":"Filtro sipas furnitorëve (mund të përsëritet disa herë)."},
+          {"name":"download","in":"query","required":false,"schema":{"type":"string","enum":["csv","xlsx"]},"description":"Nëse vendoset, përgjigjja do të jetë file download (CSV ose XLSX)."}
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista e artikujve ose file i shkarkuar (nëse download është kërkuar).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/OrderRow" }
+                },
+                "examples": {
+                  "sample": {
+                    "summary": "Shembull i thjeshtë",
+                    "externalValue": "./samples/api_orders_sample.json"
+                  }
+                }
+              },
+              "text/csv": {
+                "schema": { "type": "string", "format": "binary" }
+              },
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OrderRow": {
+        "type": "object",
+        "properties": {
+          "sifra": {"type":"string","example":"99575549"},
+          "emri": {"type":"string","example":"CONTOUR PLUS TRAKE A50"},
+          "barkod": {"type":"string","example":"5016003764004"},
+          "current_stock": {"type":"integer","example":543},
+          "avg_daily_sales": {"type":"number","format":"float","example":62.42857},
+          "days_cover": {"type":"number","format":"float","example":8.7},
+          "min_zaliha": {"type":"integer","example":1747},
+          "qty_to_order": {"type":"integer","example":1746},
+          "supplier_name": {"type":"string","example":"PHOENIX"}
+        },
+        "required": ["sifra","emri","barkod","current_stock","avg_daily_sales","days_cover","min_zaliha","qty_to_order","supplier_name"]
+      }
+    }
+  }
+}
