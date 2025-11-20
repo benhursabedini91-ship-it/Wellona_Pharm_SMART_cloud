@@ -1,18 +1,57 @@
 # Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
 *.pyc
 *.pyo
 *.pyd
 
 # Environment
 .env
+.env.local
+.env.*.local
 venv/
 env/
+ENV/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# Other
+# Logs
+*.log
+logs/
+app/logs/
+app_server_*.log
+server_*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*.old
+new*.html
+
+# Database
 *.sqlite3
+*.db
 instance/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Sensitive data
+efaktura_subscription_id.txt
+*_credentials.json
+*_secrets.json
