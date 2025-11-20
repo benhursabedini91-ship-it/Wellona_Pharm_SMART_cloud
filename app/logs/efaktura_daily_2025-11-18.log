@@ -1,0 +1,40 @@
+[2025-11-18 18:06:05] ========================================
+[2025-11-18 18:06:05]   eFaktura Daily Automation
+[2025-11-18 18:06:05] ========================================
+[2025-11-18 18:06:05] 
+[1/5] Subscribing for email notifications...
+[2025-11-18 18:06:13] ‚úÖ Subscription successful
+[2025-11-18 18:06:13] ================================================================================   SUBSCRIBE FOR INVOICE NOTIFICATIONS ================================================================================  =ÉÙÌ Request: POST https://efaktura.mfin.gov.rs/api/publicApi/subscribe G≈¶ Time: 2025-11-18 18:06:13 =ÉÙË Status: 200  G£‡ SUBSCRIPTION SUCCESSFUL! =ÉÂˆ Subscription ID: 4212cc6d-9bdd-4166-a1b3-6c235591d01b  G‹·n+≈  IMPORTANT:    - Subscription is valid for NEXT DAY only (expires in 24h)    - You will receive notifications for invoice status changes    - Notifications will be sent to your registered endpoint    - Re-subscribe daily to maintain continuous monitoring  =É∆+ Subscription ID saved to: efaktura_subscription_id.txt  ================================================================================
+[2025-11-18 18:06:14] 
+[2/5] Fetching new invoices...
+[2025-11-18 18:06:14] Date range: 2025-11-11 to 2025-11-18
+[2025-11-18 18:06:16] ‚ùå Fetch exception: Traceback (most recent call last):
+[2025-11-18 18:06:16] 
+[3/5] Running import dry-run...
+[2025-11-18 18:06:22] ‚ö†Ô∏è  Dry-run unclear result: ================================================================================   eFAKTURA IMPORT - SAFE MODE (Duplicate Check) ================================================================================ =ÉÙÈ XML Directory: ../staging/faktura_uploads =Éˆ∆ Mode: DRY-RUN G‹·n+≈  Force: NO (Skip duplicates) ================================================================================  =ÉÙÔ 51 XML files gjetur  G•Ó DB Connection failed: connection to server at "localhost" (::1), port 5432 failed: Connection refused (0x0000274D/10061) 	Is the server running on that host and accepting TCP/IP connections? connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused (0x0000274D/10061) 	Is the server running on that host and accepting TCP/IP connections? 
+[2025-11-18 18:06:22] 
+[5/5] Generating summary report...
+[2025-11-18 18:06:22] Summary:
+[2025-11-18 18:06:22]   - Total XML files: 50
+[2025-11-18 18:06:22]   - Latest file: INV_364134587.xml
+[2025-11-18 18:06:23]   - Last modified: 11/18/2025 15:14:15
+[2025-11-18 18:06:25]   - Suppliers:
+[2025-11-18 18:06:25]     * PHOENIX PHARMA DOO, BEOGRAD (CUKARICA) : 21 invoices
+[2025-11-18 18:06:25]     * VEGA d.o.o. : 15 invoices
+[2025-11-18 18:06:26]     * SOPHARMA TRADING D.O.O. : 7 invoices
+[2025-11-18 18:06:26]     * DR LUIGI DOO  Vranje : 2 invoices
+[2025-11-18 18:06:26]     * NLB Komercijalna banka AD Beograd : 2 invoices
+[2025-11-18 18:06:26]     * PRIVREDNO DRUäTVO ZA PROIZVODNJU PROMET I USLUGE HUMANIS D.O.O. BEOGRAD-ZVEZDARA : 1 invoices
+[2025-11-18 18:06:26]     * OTP banka Srbija akcionarsko druötvo Novi Sad : 1 invoices
+[2025-11-18 18:06:26]     * JAVNO PREDUZECE "KOMUNALAC" : 1 invoices
+[2025-11-18 18:06:26] ‚úÖ Summary complete
+[2025-11-18 18:06:26] 
+========================================
+[2025-11-18 18:06:26]   Daily Automation Complete
+[2025-11-18 18:06:26]   Time: 2025-11-18 18:06:26
+[2025-11-18 18:06:26]   Log: logs\efaktura_daily_2025-11-18.log
+[2025-11-18 18:06:26] ========================================
+[2025-11-18 18:06:26] 
+üî Subscription active until: 2025-11-18
+[2025-11-18 18:06:26] 
+‚úÖ All tasks completed!

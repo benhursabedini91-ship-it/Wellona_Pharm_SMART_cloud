@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiscal Bills Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="text"],
+        input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px 5px 5px 0;
+        }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-zero { background: #fff3cd; color: #856404; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .alarm-active {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .file-item {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .file-item:hover {
+            background: #f8f9fa;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧾 Fiscal Bills Dashboard</h1>
+
+        <div class="grid">
+            <!-- Fetch by Date -->
+            <div class="card">
+                <h2>📅 Fetch by Date</h2>
+                <div class="form-group">
+                    <label for="fetchDate">Data:</label>
+                    <input type="date" id="fetchDate" value="">
+                </div>
+                <button onclick="fetchByDate()">Fetch Fiscal Bills</button>
+                <div id="dateResult" class="result"></div>
+            </div>
+
+            <!-- Fetch by Number -->
+            <div class="card">
+                <h2>🔢 Fetch by Number</h2>
+                <div class="form-group">
+                    <label for="billNumber">Fiscal Bill Number:</label>
+                    <input type="text" id="billNumber" placeholder="AB12-3456-7890">
+                </div>
+                <button onclick="fetchByNumber()">Fetch Single Bill</button>
+                <div id="numberResult" class="result"></div>
+            </div>
+
+            <!-- Alarm Status -->
+            <div class="card">
+                <h2>⚠️ Alarm Status</h2>
+                <button onclick="checkAlarm()">Check Alarm</button>
+                <div id="alarmResult" class="result"></div>
+            </div>
+        </div>
+
+        <!-- Guard Status -->
+        <div class="card">
+            <h2>🛡️ Guard Status</h2>
+            <button onclick="checkGuardStatus()">Check Guard Status</button>
+            <div id="guardResult" class="result"></div>
+        </div>
+
+        <!-- Files List -->
+        <div class="card">
+            <h2>📁 Staged Files</h2>
+            <button onclick="listFiles()">Refresh File List</button>
+            <div id="filesResult" class="result"></div>
+        </div>
+
+        <!-- Parse Lines -->
+        <div class="card">
+            <h2>📊 Parse Lines (Extract Items)</h2>
+            <button onclick="parseLines()">Parse All FB_*.json</button>
+            <div id="parseResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Set today's date as default
+        document.getElementById('fetchDate').valueAsDate = new Date();
+
+        function showResult(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.className = 'result ' + type;
+            el.innerHTML = message;
+            el.style.display = 'block';
+        }
+
+        function showLoading(elementId) {
+            const el = document.getElementById(elementId);
+            el.className = 'result info';
+            el.innerHTML = 'Loading...<span class="spinner"></span>';
+            el.style.display = 'block';
+        }
+
+        async function fetchByDate() {
+            const date = document.getElementById('fetchDate').value;
+            if (!date) {
+                showResult('dateResult', 'Ju lutem zgjidhni datën!', 'error');
+                return;
+            }
+
+            showLoading('dateResult');
+
+            try {
+                const response = await fetch('/api/fetch-by-date', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({date: date})
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showResult('dateResult', '❌ Error: ' + data.error, 'error');
+                } else {
+                    const msg = `
+                        <strong>✅ Success!</strong><br>
+                        Data: ${data.date}<br>
+                        Fatura të gjetur: ${data.count}<br>
+                        Ruajtur: ${data.saved}<br>
+                        <details style="margin-top:10px;">
+                            <summary>Detaje (${data.bills.length})</summary>
+                            <pre>${data.bills.join('\n')}</pre>
+                        </details>
+                    `;
+                    showResult('dateResult', msg, 'success');
+                }
+            } catch (error) {
+                showResult('dateResult', '❌ Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function fetchByNumber() {
+            const number = document.getElementById('billNumber').value.trim();
+            if (!number) {
+                showResult('numberResult', 'Ju lutem shkruani numrin e faturës!', 'error');
+                return;
+            }
+
+            showLoading('numberResult');
+
+            try {
+                const response = await fetch('/api/fetch-by-number', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({number: number})
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showResult('numberResult', '❌ Error: ' + data.error, 'error');
+                } else {
+                    const msg = `
+                        <strong>✅ Success!</strong><br>
+                        Numri: ${data.number}<br>
+                        Total: ${data.total || 'N/A'}<br>
+                        Data: ${data.issueDate || 'N/A'}<br>
+                        Ruajtur: ${data.saved}
+                    `;
+                    showResult('numberResult', msg, 'success');
+                }
+            } catch (error) {
+                showResult('numberResult', '❌ Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function checkAlarm() {
+            showLoading('alarmResult');
+
+            try {
+                const response = await fetch('/api/check-alarm');
+                const data = await response.json();
+
+                if (data.error) {
+                    showResult('alarmResult', '❌ Error: ' + data.error, 'error');
+                } else {
+                    let msg = '';
+                    if (data.alarm_active) {
+                        msg = `<div class="alarm-active">
+                            <strong>🚨 ALARM ACTIVE!</strong><br>
+                            ${data.consecutive_zeros} ditë me radhë pa fatura (threshold: ${data.threshold})
+                        </div>`;
+                    } else {
+                        msg = `<strong>✅ Asnjë alarm</strong><br>
+                               Ditë me radhë pa fatura: ${data.consecutive_zeros} (threshold: ${data.threshold})`;
+                    }
+
+                    msg += '<div style="margin-top:15px;"><strong>Historiku (7 ditë):</strong></div>';
+                    data.history.forEach(h => {
+                        const badge = h.status === 'OK' ? 'status-ok' : 
+                                     h.status === 'ZERO' ? 'status-zero' : 'status-error';
+                        msg += `<span class="status-badge ${badge}">${h.date}: ${h.count} (${h.status})</span>`;
+                    });
+
+                    showResult('alarmResult', msg, data.alarm_active ? 'error' : 'success');
+                }
+            } catch (error) {
+                showResult('alarmResult', '❌ Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function checkGuardStatus() {
+            showLoading('guardResult');
+
+            try {
+                const response = await fetch('/api/guard-status');
+                const data = await response.json();
+
+                const msg = `
+                    <strong>Status:</strong> ${data.status}<br>
+                    <span class="status-badge ${data.allow_db_write ? 'status-ok' : 'status-error'}">
+                        ALLOW_DB_WRITE: ${data.allow_db_write ? '✓' : '✗'}
+                    </span>
+                    <span class="status-badge ${data.require_confirm ? 'status-ok' : 'status-zero'}">
+                        REQUIRE_MANUAL_CONFIRM: ${data.require_confirm ? '✓' : '✗'}
+                    </span>
+                `;
+
+                showResult('guardResult', msg, 'info');
+            } catch (error) {
+                showResult('guardResult', '❌ Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function listFiles() {
+            showLoading('filesResult');
+
+            try {
+                const response = await fetch('/api/list-files');
+                const data = await response.json();
+
+                if (data.error) {
+                    showResult('filesResult', '❌ Error: ' + data.error, 'error');
+                } else {
+                    let msg = `<strong>Total: ${data.count} files</strong>`;
+                    if (data.count > 0) {
+                        msg += '<div class="file-list">';
+                        data.files.forEach(f => {
+                            msg += `
+                                <div class="file-item">
+                                    <span>${f.name}</span>
+                                    <small style="color:#666;">${(f.size / 1024).toFixed(1)} KB | ${f.modified}</small>
+                                </div>
+                            `;
+                        });
+                        msg += '</div>';
+                    }
+                    showResult('filesResult', msg, 'info');
+                }
+            } catch (error) {
+                showResult('filesResult', '❌ Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function parseLines() {
+            showLoading('parseResult');
+
+            try {
+                const response = await fetch('/api/parse-lines', {method: 'POST'});
+                const data = await response.json();
+
+                if (data.error) {
+                    showResult('parseResult', '❌ Error: ' + data.error, 'error');
+                } else if (!data.success) {
+                    showResult('parseResult', '⚠️ Parse failed:<br><pre>' + data.output + '</pre>', 'error');
+                } else {
+                    const msg = `
+                        <strong>✅ Parse success!</strong><br>
+                        CSV: ${data.csv_path || 'Check output below'}<br>
+                        <details style="margin-top:10px;">
+                            <summary>Output</summary>
+                            <pre>${data.output}</pre>
+                        </details>
+                    `;
+                    showResult('parseResult', msg, 'success');
+                }
+            } catch (error) {
+                showResult('parseResult', '❌ Network error: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-refresh guard status on load
+        window.addEventListener('load', () => {
+            checkGuardStatus();
+            listFiles();
+        });
+    </script>
+</body>
+</html>
